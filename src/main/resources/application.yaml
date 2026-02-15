@@ -1,0 +1,72 @@
+spring:
+  # PHẢI CÓ NHÁNH JPA Ở ĐÂY
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    # Chờ datasource sẵn sàng rồi mới tạo bảng
+    defer-datasource-initialization: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+  datasource:
+    primary:
+      jdbc-url: jdbc:mysql://localhost:3306/obe_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      url: jdbc:mysql://localhost:3306/obe_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      username: root
+      password: root123
+      driver-class-name: com.mysql.cj.jdbc.Driver
+
+    camunda:
+      jdbc-url: jdbc:h2:mem:camunda-db;DB_CLOSE_DELAY=-1
+      url: jdbc:h2:mem:camunda-db;DB_CLOSE_DELAY=-1
+      username: sa
+      password: ""
+      driver-class-name: org.h2.Driver
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+  # Loại bỏ các package của Camunda để tránh xung đột
+  packages-to-exclude: org.camunda.bpm
+  # Chỉ quét chính xác nơi bạn để Controller
+  packages-to-scan: com.OBE.workflow.controller
+
+camunda:
+  bpm:
+    database:
+      type: h2
+      schema-update: true
+    deployment-resource-pattern:
+      - "classpath*:**/*.bpmn"
+      - "classpath*:**/*.bpmn20.xml"
+      - "classpath*:**/*.dmn"
+      - "classpath*:**/*.dmn11.xml"
+      - "classpath*:**/*.form"
+    admin-user:
+      id: root        # Đây là username để đăng nhập
+      password: root  # Đây là password để đăng nhập
+      firstName: Admin
+      lastName: User
+      email: admin@localhost
+
+obe:
+  jwt:
+    secret: day_la_ma_bi_mat_sieu_cap_vu_tru_2026
+    expiration: 3600000
+  system-admin:
+    username: admin
+    password: 123456
+
+logging:
+  charset:
+    console: UTF-8
+    file: UTF-8
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} %-5level - %msg%n"
+  level:
+    root: INFO
+    org.springframework.security: DEBUG
