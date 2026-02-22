@@ -33,7 +33,7 @@ springdoc:
   # Loại bỏ các package của Camunda để tránh xung đột
   packages-to-exclude: org.camunda.bpm
   # Chỉ quét chính xác nơi bạn để Controller
-  packages-to-scan: com.OBE.workflow.controller
+  packages-to-scan: com.OBE.workflow.feature
 
 camunda:
   bpm:
