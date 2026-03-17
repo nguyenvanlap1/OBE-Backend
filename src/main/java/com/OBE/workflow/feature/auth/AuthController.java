@@ -1,12 +1,12 @@
 package com.OBE.workflow.feature.auth;
 import com.OBE.workflow.conmon.config.JwtUtils;
 import com.OBE.workflow.conmon.dto.ApiResponse;
-import com.OBE.workflow.other_entity_repo.entity.entity.Account;
-import com.OBE.workflow.other_entity_repo.entity.entity.Role;
+import com.OBE.workflow.other_entity_repo.entity.Account;
+import com.OBE.workflow.other_entity_repo.entity.Role;
 import com.OBE.workflow.conmon.enums.SystemRoleType;
 import com.OBE.workflow.conmon.exception.AppException;
 import com.OBE.workflow.conmon.exception.ErrorCode;
-import com.OBE.workflow.other_entity_repo.entity.service.RoleService;
+import com.OBE.workflow.other_entity_repo.service.RoleService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;

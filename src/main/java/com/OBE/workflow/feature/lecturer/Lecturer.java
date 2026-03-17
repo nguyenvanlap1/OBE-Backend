@@ -1,7 +1,7 @@
 package com.OBE.workflow.feature.lecturer;
 
-import com.OBE.workflow.feature.supDepartment.SubDepartment;
-import com.OBE.workflow.other_entity_repo.entity.entity.Person;
+import com.OBE.workflow.feature.sup_department.SubDepartment;
+import com.OBE.workflow.other_entity_repo.entity.Person;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -21,7 +21,7 @@ public class Lecturer extends Person {
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-            name = "giang_vien_bo_mon", // Tên bảng trung gian
+            name = "nhan_su_bo_mon", // Tên bảng trung gian
             joinColumns = @JoinColumn(name = "ma_giang_vien"),
             inverseJoinColumns = @JoinColumn(name = "ma_bo_mon")
     )

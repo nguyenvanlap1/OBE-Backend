@@ -29,4 +29,13 @@ public class PageResponse<T, U> {
                 .totalPages(page.getTotalPages())
                 .build();
     }
+    public static <U> PageResponse<U, U> fromPage(Page<U> page) {
+        return PageResponse.<U, U>builder()
+                .content(page.getContent())
+                .page(page.getNumber())
+                .size(page.getSize())
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .build();
+    }
 }

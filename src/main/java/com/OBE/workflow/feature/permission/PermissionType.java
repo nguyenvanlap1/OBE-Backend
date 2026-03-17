@@ -1,5 +1,6 @@
 package com.OBE.workflow.feature.permission;
 
+import com.OBE.workflow.conmon.enums.ScopeType;
 import lombok.Getter;
 
 import java.util.Set;

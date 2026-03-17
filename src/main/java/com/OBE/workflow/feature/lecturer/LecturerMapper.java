@@ -2,7 +2,7 @@ package com.OBE.workflow.feature.lecturer;
 
 import com.OBE.workflow.feature.lecturer.request.LecturerRequest;
 import com.OBE.workflow.feature.lecturer.response.LecturerResponse;
-import com.OBE.workflow.feature.supDepartment.SubDepartment;
+import com.OBE.workflow.feature.sup_department.SubDepartment;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;

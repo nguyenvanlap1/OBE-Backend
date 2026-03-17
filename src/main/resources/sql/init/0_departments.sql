@@ -1,0 +1,22 @@
+-- Sử dụng INSERT IGNORE: Nếu trùng ma_khoa (Primary Key), MySQL sẽ bỏ qua dòng đó và tiếp tục dòng kế tiếp
+INSERT IGNORE INTO truong_khoa (ma_khoa, ten_khoa, mieu_ta_khac) VALUES
+('FIT', 'Khoa Công nghệ Thông tin', 'Đào tạo kỹ sư phần mềm chất lượng cao'),
+('FME', 'Khoa Cơ khí', 'Cơ khí chế tạo và tự động hóa'),
+('FE', 'Khoa Kinh tế', 'Quản trị kinh doanh và Tài chính'),
+('FL', 'Khoa Ngoại ngữ', 'Ngôn ngữ Anh và Nhật'),
+('FCE', 'Khoa Kỹ thuật Xây dựng', 'Thiết kế và quản lý công trình'),
+('FAS', 'Khoa Khoa học Cơ bản', 'Giảng dạy toán lý hóa đại cương'),
+('FBT', 'Khoa Công nghệ Sinh học', 'Nghiên cứu ứng dụng sinh học'),
+('FMT', 'Khoa Y học', 'Đào tạo bác sĩ đa khoa'),
+('FAG', 'Khoa Nông nghiệp', 'Phát triển nông nghiệp bền vững'),
+('FES', 'Khoa Khoa học Môi trường', 'Nghiên cứu biến đổi khí hậu'),
+('FLL', 'Khoa Luật', 'Đào tạo luật sư và tư vấn pháp lý'),
+('FPS', 'Khoa Khoa học Chính trị', 'Nghiên cứu chính sách công'),
+('FSE', 'Khoa Sư phạm', 'Đào tạo giáo viên các cấp'),
+('FTH', 'Khoa Du lịch và Khách sạn', 'Quản lý dịch vụ lữ hành'),
+('FAD', 'Khoa Thiết kế Đồ họa', 'Sáng tạo nội dung số'),
+('FMC', 'Khoa Truyền thông đa phương tiện', 'Báo chí và quảng cáo'),
+('FPH', 'Khoa Dược học', 'Sản xuất và quản lý dược phẩm'),
+('FIT02', 'Bộ môn Hệ thống thông tin', 'Trực thuộc khoa CNTT'),
+('FIT03', 'Bộ môn Mạng máy tính', 'Trực thuộc khoa CNTT'),
+('FIT04', 'Bộ môn Công nghệ phần mềm', 'Trực thuộc khoa CNTT');

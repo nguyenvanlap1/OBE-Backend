@@ -1,22 +1,24 @@
 package com.OBE.workflow.conmon.config;
 
+import com.OBE.workflow.conmon.enums.ScopeType;
 import com.OBE.workflow.feature.officer.Officer;
 import com.OBE.workflow.feature.officer.OfficerRepository;
 import com.OBE.workflow.feature.permission.PermissionRepository;
-import com.OBE.workflow.feature.supDepartment.SubDepartmentRepository;
+import com.OBE.workflow.feature.sup_department.SubDepartmentRepository;
 import com.OBE.workflow.feature.auth.AccountRepository;
 import com.OBE.workflow.feature.department.Department;
 import com.OBE.workflow.feature.department.DepartmentRepository;
-import com.OBE.workflow.other_entity_repo.entity.entity.Account;
-import com.OBE.workflow.other_entity_repo.entity.entity.AccountRoleSubDepartment;
+import com.OBE.workflow.other_entity_repo.entity.Account;
+import com.OBE.workflow.other_entity_repo.entity.AccountRoleSubDepartment;
 import com.OBE.workflow.feature.permission.Permission;
-import com.OBE.workflow.other_entity_repo.entity.entity.Person;
-import com.OBE.workflow.other_entity_repo.entity.entity.Role;
-import com.OBE.workflow.other_entity_repo.entity.repository.*;
+import com.OBE.workflow.other_entity_repo.entity.Person;
+import com.OBE.workflow.other_entity_repo.entity.Role;
 import com.OBE.workflow.conmon.enums.SystemRoleType;
 import com.OBE.workflow.conmon.enums.SystemManagement;
 import com.OBE.workflow.feature.permission.PermissionType;
-import com.OBE.workflow.feature.supDepartment.SubDepartment;
+import com.OBE.workflow.feature.sup_department.SubDepartment;
+import com.OBE.workflow.other_entity_repo.repository.AccountRoleSubDepartmentRepository;
+import com.OBE.workflow.other_entity_repo.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
@@ -52,8 +54,14 @@ public class DataInitializer implements ApplicationRunner {
     @Override
     @Transactional // Thêm Transactional để đảm bảo tính toàn vẹn khi xóa/tạo
     public void run(ApplicationArguments args) {
-        initialAdmin();
-        initialPermissions();
+        try {
+            initialAdmin();
+            initialPermissions();
+        } catch (Exception e) {
+            System.err.println("❌ LỖI KHỞI TẠO DỮ LIỆU: " + e.getMessage());
+            // Ném lỗi ra ngoài để Spring Boot dừng chạy
+            throw new RuntimeException("Data Initializer failed - Stopping application", e);
+        }
     }
 
     private void initialPermissions() {
@@ -88,6 +96,8 @@ public class DataInitializer implements ApplicationRunner {
                 .orElseGet(() -> roleRepository.save(Role.builder()
                         .roleId(SystemRoleType.ADMIN.name())
                         .name(SystemRoleType.ADMIN.name())
+                        .subDepartment(subDepartment)
+                        .scopeType(ScopeType.TRUONG)
                         .build()));
 
         // 2. KIỂM TRA VÀ XÓA NẾU USERNAME THAY ĐỔI

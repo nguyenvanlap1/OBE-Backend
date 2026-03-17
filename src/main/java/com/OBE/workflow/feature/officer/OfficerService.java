@@ -4,7 +4,7 @@ import com.OBE.workflow.conmon.exception.AppException;
 import com.OBE.workflow.conmon.exception.ErrorCode;
 import com.OBE.workflow.feature.officer.request.OfficerRequest;
 import com.OBE.workflow.feature.auth.AccountRepository;
-import com.OBE.workflow.other_entity_repo.entity.repository.PersonRepository;
+import com.OBE.workflow.other_entity_repo.repository.PersonRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;

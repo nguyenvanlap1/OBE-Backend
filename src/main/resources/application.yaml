@@ -1,5 +1,11 @@
 spring:
   # PHẢI CÓ NHÁNH JPA Ở ĐÂY
+  sql:
+    init:
+      mode: always
+      # Sử dụng dấu * để quét toàn bộ file .sql trong thư mục init
+      data-locations: classpath:sql/init/*.sql
+      continue-on-error: true
   jpa:
     hibernate:
       ddl-auto: update
@@ -52,6 +58,13 @@ camunda:
       firstName: Admin
       lastName: User
       email: admin@localhost
+
+#langchain4j:
+#  ollama:
+#    chat-model:
+#      base-url: http://localhost:11434
+#      model-name: qwen2.5:1.5b
+#      timeout: 60s # Nên thêm cái này vì model 1.5B đôi khi cần thời gian suy nghĩ
 
 obe:
   jwt:

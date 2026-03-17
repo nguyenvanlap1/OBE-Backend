@@ -1,6 +1,6 @@
 package com.OBE.workflow.feature.lecturer;
 
-import com.OBE.workflow.feature.supDepartment.SubDepartment;
+import com.OBE.workflow.feature.sup_department.SubDepartment;
 import jakarta.persistence.criteria.Join;
 import org.springframework.data.jpa.domain.Specification;
 

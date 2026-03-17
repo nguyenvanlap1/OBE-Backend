@@ -52,7 +52,7 @@ public class DepartmentController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteDepartment(@PathVariable String id) {
+    public ResponseEntity<ApiResponse<Void>> deleteDepartment(@PathVariable("id") String id) {
         departmentService.deleteDepartment(id);
         return ResponseEntity.ok(
                 ApiResponse.<Void>builder()
@@ -63,7 +63,7 @@ public class DepartmentController {
     }
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<DepartmentResponse>> updateDepartment(
-            @PathVariable String id,
+            @PathVariable("id") String id,
             @Valid @RequestBody DepartmentRequest request) {
         // Gọi service xử lý (Sử dụng MapStruct như ta đã bàn ở bước trước)
         Department updatedDepartment = departmentService.updateDepartment(id, request);
