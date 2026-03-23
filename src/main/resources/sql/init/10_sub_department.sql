@@ -1,30 +1,34 @@
--- Sử dụng INSERT IGNORE: Nếu trùng ma_bo_mon (Primary Key), MySQL sẽ bỏ qua dòng đó
--- Lưu ý: ma_khoa phải tồn tại trong bảng truong_khoa trước khi chạy script này
+INSERT IGNORE INTO hoc_phan (ma_hoc_phan, ten_hoc_phan, ma_bo_mon) VALUES
+('IT0201', 'Lập trình hướng đối tượng', 'IT02'),
+('IT0202', 'Cấu trúc dữ liệu và Giải thuật', 'IT02'),
+('IT0101', 'Cơ sở dữ liệu', 'IT01'),
+('EC0201', 'Quản trị học đại cương', 'EC02'),
+('LN0101', 'Tiếng Anh chuyên ngành 1', 'LN01');
 
-INSERT IGNORE INTO khoa_bo_mon (ma_bo_mon, ten_bo_mon, mieu_ta_khac, ma_khoa) VALUES
--- Các bộ môn thuộc Khoa Công nghệ Thông tin (FIT)
-('IT01', 'Bộ môn Hệ thống thông tin', 'Phát triển và quản lý dữ liệu', 'FIT'),
-('IT02', 'Bộ môn Công nghệ phần mềm', 'Quy trình và kỹ thuật lập trình', 'FIT'),
-('IT03', 'Bộ môn Mạng máy tính', 'An ninh mạng và viễn thông', 'FIT'),
-('IT04', 'Bộ môn Khoa học máy tính', 'Trí tuệ nhân tạo và thuật toán', 'FIT'),
+INSERT INTO hoc_phan_phien_ban (ma_hoc_phan, so_thu_tu_phien_ban, so_tin_chi, ap_dung_tu_ngay, ap_dung_den_ngay, ten_hoc_phan) VALUES
+-- Học phần IT0201
+('IT0201', 1, 3, '2023-09-01', '2024-08-31', 'Lập trình hướng đối tượng (Legacy)'),
+('IT0201', 2, 3, '2024-09-01', NULL,         'Lập trình hướng đối tượng'),
 
--- Các bộ môn thuộc Khoa Kinh tế (FE)
-('EC01', 'Bộ môn Kế toán', 'Kiểm toán và báo cáo tài chính', 'FE'),
-('EC02', 'Bộ môn Quản trị kinh doanh', 'Lãnh đạo và khởi nghiệp', 'FE'),
-('EC03', 'Bộ môn Tài chính ngân hàng', 'Thị trường chứng khoán và tiền tệ', 'FE'),
+-- Học phần IT0101
+('IT0101', 1, 4, '2024-01-01', NULL,         'Cơ sở dữ liệu nâng cao'),
 
--- Các bộ môn thuộc Khoa Ngoại ngữ (FL)
-('LN01', 'Bộ môn Tiếng Anh đại cương', 'Giảng dạy kỹ năng nghe nói đọc viết', 'FL'),
-('LN02', 'Bộ môn Tiếng Nhật', 'Ngôn ngữ và văn hóa Nhật Bản', 'FL'),
+-- Học phần EC0201
+('EC0201', 1, 3, '2023-09-01', '2025-01-01', 'Quản trị học'),
+('EC0201', 2, 2, '2025-01-02', NULL,         'Quản trị học hiện đại');
 
--- Các bộ môn thuộc Khoa Cơ khí (FME)
-('ME01', 'Bộ môn Cơ điện tử', 'Tự động hóa dây chuyền sản xuất', 'FME'),
-('ME02', 'Bộ môn Công nghệ ô tô', 'Thiết kế và bảo trì động cơ', 'FME'),
+-- Dữ liệu CO (Mục tiêu học phần) cho IT0201 v2
+INSERT INTO co (ma_co, noi_dung_muc_tieu, ma_hoc_phan, so_thu_tu_phien_ban) VALUES
+('CO1', 'Hiểu các nguyên lý cơ bản của OOP như đóng gói, kế thừa.', 'IT0201', 2),
+('CO2', 'Có khả năng thiết kế hệ thống phần mềm nhỏ bằng Java.', 'IT0201', 2);
 
--- Các bộ môn thuộc Khoa Sư phạm (FSE)
-('ED01', 'Bộ môn Tâm lý giáo dục', 'Nghiên cứu hành vi người học', 'FSE'),
-('ED02', 'Bộ môn Phương pháp giảng dạy', 'Kỹ thuật đứng lớp hiện đại', 'FSE'),
+-- Dữ liệu CLO (Chuẩn đầu ra học phần) cho IT0201 v2
+INSERT INTO clo (ma_clo, noi_dung_chuan_dau_ra, ma_hoc_phan, so_thu_tu_phien_ban) VALUES
+('CLO1.1', 'Giải thích được khái niệm Class và Object.', 'IT0201', 2),
+('CLO1.2', 'Sử dụng thành thạo tính đa hình trong lập trình.', 'IT0201', 2),
+('CLO2.1', 'Xây dựng được ứng dụng quản lý có kết nối DB.', 'IT0201', 2);
 
--- Các bộ môn thuộc Khoa Thiết kế Đồ họa (FAD)
-('DE01', 'Bộ môn Thiết kế đồ họa 2D', 'Nhận diện thương hiệu và in ấn', 'FAD'),
-('DE02', 'Bộ môn Diễn họa 3D', 'Thiết kế mô hình không gian 3 chiều', 'FAD');
+INSERT INTO diem_thanh_phan (ten_thanh_phan, quy_dinh, trong_so, ma_hoc_phan, so_thu_tu_phien_ban, ma_danh_gia) VALUES
+('Chuyên cần', 'Tham gia trên 80% số tiết', 0.1, 'IT0201', 2, 'CC'),
+('Kiểm tra giữa kỳ', 'Làm bài trên máy 60 phút', 0.3, 'IT0201', 2, 'GK'),
+('Đồ án cuối kỳ', 'Xây dựng phần mềm hoàn chỉnh', 0.6, 'IT0201', 2, 'CK');

@@ -18,12 +18,8 @@ public class Course {
     @Column(name = "ma_hoc_phan")
     private String id; // VD: CT101
 
+    // thuộc bộ môn nào
     @NonNull
-    @Column(name = "ten_mac_dinh", nullable = false)
-    private String defaultName;
-
-    // Một bộ môn quản lý nhiều học phần
-    // Một bộ môn quản lý nhiều học phần (Bắt buộc phải có bộ môn)
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "ma_bo_mon", nullable = false)
     private SubDepartment subDepartment;

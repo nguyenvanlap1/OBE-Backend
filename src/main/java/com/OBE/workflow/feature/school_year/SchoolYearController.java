@@ -1,7 +1,11 @@
 package com.OBE.workflow.feature.school_year;
 
 import com.OBE.workflow.conmon.dto.ApiResponse;
+import com.OBE.workflow.conmon.dto.PageResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,14 +18,26 @@ import java.util.List;
 public class SchoolYearController {
 
     private final SchoolYearRepository schoolYearRepository;
+    private final SchoolYearService schoolYearService;
 
-    @GetMapping
-    public ResponseEntity<ApiResponse<List<SchoolYear>>> getAll() {
+    @PostMapping("/search")
+    public ResponseEntity<ApiResponse<PageResponse<SchoolYear, SchoolYear>>> search(
+            @org.springdoc.core.annotations.ParameterObject Pageable pageable,
+            @RequestBody(required = false) SchoolYear filter) {
+
+        // 1. Lấy dữ liệu phân trang (filter có thể lấy id từ object SchoolYear)
+        String idFilter = (filter != null) ? filter.getId() : null;
+        Page<SchoolYear> page = schoolYearService.getSchoolYears(pageable, idFilter);
+
+        // 2. Vì SchoolYear Entity và Response giống nhau nên không cần Mapper phức tạp
+        List<SchoolYear> list = page.getContent();
+
+        // 3. Trả về format chuẩn
         return ResponseEntity.ok(
-                ApiResponse.<List<SchoolYear>>builder()
+                ApiResponse.<PageResponse<SchoolYear, SchoolYear>>builder()
                         .status(HttpStatus.OK.value())
-                        .message("Lấy danh sách khóa học thành công")
-                        .data(schoolYearRepository.findAll())
+                        .message("Danh sách niên khóa")
+                        .data(PageResponse.fromPage(page, list))
                         .build()
         );
     }

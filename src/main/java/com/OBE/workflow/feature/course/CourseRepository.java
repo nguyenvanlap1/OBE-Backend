@@ -5,8 +5,5 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface CourseRepository
-        extends JpaRepository<Course, String>, JpaSpecificationExecutor<Course> {
-
-    boolean existsByDefaultName(String defaultName);
+public interface CourseRepository extends JpaRepository<Course, String> {
 }

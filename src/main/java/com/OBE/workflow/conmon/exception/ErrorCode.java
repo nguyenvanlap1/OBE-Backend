@@ -28,7 +28,6 @@ public enum ErrorCode {
     INTERNAL_SERVER_ERROR(500, "Lỗi hệ thống"),
     DATABASE_ERROR(500, "Lỗi cơ sở dữ liệu"),
     UNCATEGORIZED_EXCEPTION(9999, "Lỗi chưa phân loại");
-
     private final int code;
     private final String message;
 }

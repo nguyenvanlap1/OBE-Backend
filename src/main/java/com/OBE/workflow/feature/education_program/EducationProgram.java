@@ -1,11 +1,14 @@
 package com.OBE.workflow.feature.education_program;
 
-import com.OBE.workflow.feature.course.course_version.CourseVersion;
+import com.OBE.workflow.feature.course_version.CourseVersion;
+import com.OBE.workflow.feature.education_program.plo.PLO;
+import com.OBE.workflow.feature.education_program.po.PO;
 import com.OBE.workflow.feature.sup_department.SubDepartment;
 import com.OBE.workflow.feature.school_year.SchoolYear;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -50,6 +53,7 @@ public class EducationProgram {
     )
     private List<SchoolYear> schoolYears;
 
+
     @ManyToMany
     @JoinTable(
             name = "chi_tiet_chuong_trinh_dao_tao",
@@ -63,4 +67,14 @@ public class EducationProgram {
     )
     @NonNull
     private List<CourseVersion> courseVersions;
+
+    // 1. Thêm danh sách Mục tiêu đào tạo (PO)
+    @Builder.Default
+    @OneToMany(mappedBy = "educationProgram", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PO> pos = new ArrayList<>();
+
+    // 2. Thêm danh sách Chuẩn đầu ra (PLO)
+    @Builder.Default
+    @OneToMany(mappedBy = "educationProgram", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PLO> plos = new ArrayList<>();
 }

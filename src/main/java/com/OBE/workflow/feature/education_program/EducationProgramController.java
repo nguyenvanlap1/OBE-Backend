@@ -4,7 +4,9 @@ import com.OBE.workflow.conmon.dto.PageResponse;
 import com.OBE.workflow.conmon.dto.ApiResponse;
 import com.OBE.workflow.feature.education_program.request.EducationProgramFilterRequest;
 import com.OBE.workflow.feature.education_program.request.EducationProgramRequest;
+import com.OBE.workflow.feature.education_program.request.EducationProgramRequestUpdateDetail;
 import com.OBE.workflow.feature.education_program.response.EducationProgramResponse;
+import com.OBE.workflow.feature.education_program.response.EducationProgramResponseDetail;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
@@ -35,6 +37,19 @@ public class EducationProgramController {
                         .build());
     }
 
+    @PostMapping("/create-detail")
+    public ResponseEntity<ApiResponse<EducationProgramResponseDetail>> createProgramDetail(
+            @Valid @RequestBody EducationProgramRequestUpdateDetail requestCreateDetail ) {
+        EducationProgramResponseDetail educationProgramResponseDetail = educationProgramService.createProgramDetail(requestCreateDetail);
+        return ResponseEntity.ok(
+                ApiResponse.<EducationProgramResponseDetail>builder()
+                        .status(HttpStatus.CREATED.value())
+                        .message("Đã tạo chi tiết chương trình đào tạo thành công")
+                        .data(educationProgramResponseDetail)
+                        .build()
+        );
+    }
+
     @PostMapping("/search")
     public ResponseEntity<ApiResponse<PageResponse<EducationProgramResponse, EducationProgramResponse>>> getPrograms(
             @ParameterObject Pageable pageable,
@@ -52,9 +67,27 @@ public class EducationProgramController {
         );
     }
 
+    /**
+     * Endpoint lấy chi tiết chương trình đào tạo bao gồm PO, PLO và Mapping
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<EducationProgramResponseDetail>> getProgramDetail(
+            @PathVariable("id") String id) {
+
+        EducationProgramResponseDetail detail = educationProgramService.getEducationProgramDetail(id);
+
+        return ResponseEntity.ok(
+                ApiResponse.<EducationProgramResponseDetail>builder()
+                        .status(HttpStatus.OK.value())
+                        .message("Thông tin chi tiết chương trình đào tạo")
+                        .data(detail)
+                        .build()
+        );
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<EducationProgramResponse>> updateProgram(
-            @PathVariable String id,
+            @PathVariable("id") String id,
             @Valid @RequestBody EducationProgramRequest request) {
         request.setId(id); // Đồng bộ ID từ PathVariable vào Request
         EducationProgramResponse updated = educationProgramService.updateEducationProgram(request);
@@ -69,7 +102,7 @@ public class EducationProgramController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteProgram(@PathVariable String id) {
+    public ResponseEntity<ApiResponse<Void>> deleteProgram(@PathVariable("id") String id) {
         educationProgramService.deleteEducationProgram(id);
         return ResponseEntity.ok(
                 ApiResponse.<Void>builder()
@@ -108,6 +141,23 @@ public class EducationProgramController {
                 ApiResponse.<Void>builder()
                         .status(HttpStatus.OK.value())
                         .message("Đã xóa học phần khỏi chương trình đào tạo")
+                        .build()
+        );
+    }
+
+    @PutMapping("/{id}/detail")
+    public ResponseEntity<ApiResponse<EducationProgramResponseDetail>> updateProgramDetail(
+            @PathVariable("id") String id,
+            @Valid @RequestBody EducationProgramRequestUpdateDetail request) {
+
+        // Gọi hàm logic phức tạp mà chúng ta vừa viết
+        EducationProgramResponseDetail detail = educationProgramService.updateProgramDetail(id, request);
+
+        return ResponseEntity.ok(
+                ApiResponse.<EducationProgramResponseDetail>builder()
+                        .status(HttpStatus.OK.value())
+                        .message("Cập nhật chi tiết PO, PLO và Mapping thành công")
+                        .data(detail)
                         .build()
         );
     }

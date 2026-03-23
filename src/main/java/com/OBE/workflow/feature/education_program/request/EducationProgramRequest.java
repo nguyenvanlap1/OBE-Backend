@@ -36,15 +36,4 @@ public class EducationProgramRequest {
 
     // Đối với CourseVersion, vì khóa ngoại là khóa phức hợp (composite key)
     // Ta cần một DTO nhỏ để hứng cặp (ma_hoc_phan, so_thu_tu_phien_ban)
-    private List<CourseVersionIdRequest> courseVersions;
-
-    @Getter
-    @Setter
-    public static class CourseVersionIdRequest {
-        @NotBlank(message = "Mã học phần không được trống")
-        private String courseId;
-
-        @NotNull(message = "Số thứ tự phiên bản không được trống")
-        private Integer versionNumber;
-    }
 }
