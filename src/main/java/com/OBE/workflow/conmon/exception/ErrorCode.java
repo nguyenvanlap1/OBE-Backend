@@ -23,7 +23,7 @@ public enum ErrorCode {
     INVALID_REQUEST(400, "Yêu cầu không hợp lệ"),
     MISSING_REQUIRED_FIELD(400, "Thiếu trường bắt buộc"),
     INVALID_FORMAT(400, "Sai định dạng dữ liệu"),
-
+    INVALID_PARAM(400, "Gửi tham số lạ"),
     // ===== SYSTEM =====
     INTERNAL_SERVER_ERROR(500, "Lỗi hệ thống"),
     DATABASE_ERROR(500, "Lỗi cơ sở dữ liệu"),

@@ -18,8 +18,8 @@ import java.util.List;
         name = "diem_thanh_phan",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "uq_assessment_name_version",
-                        columnNames = {"ten_thanh_phan", "ma_hoc_phan", "so_thu_tu_phien_ban"}
+                        name = "uq_assessment_code_version",
+                        columnNames = {"ma_danh_gia", "ma_hoc_phan", "so_thu_tu_phien_ban"}
                 )
         }
 )
@@ -29,10 +29,10 @@ public class Assessment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "ma_danh_gia", nullable = false, unique = true)
+    @Column(name = "ma_danh_gia", nullable = false)
     private String assessmentCode;
 
-    @Column(name = "ten_thanh_phan", nullable = false, unique = true)
+    @Column(name = "ten_thanh_phan", nullable = false)
     private String name; // Ví dụ: Thi lý thuyết cuối kỳ, Bài tập...
 
     @Column(name = "quy_dinh", nullable = false)

@@ -2,14 +2,13 @@ package com.OBE.workflow.feature.student;
 
 import com.OBE.workflow.conmon.exception.AppException;
 import com.OBE.workflow.conmon.exception.ErrorCode;
-import com.OBE.workflow.feature.auth.AccountRepository;
-import com.OBE.workflow.feature.education_program.EducationProgram;
-import com.OBE.workflow.feature.education_program.EducationProgramRepository;
+import com.OBE.workflow.feature.student.request.StudentCreateRequest;
 import com.OBE.workflow.feature.student.request.StudentFilterRequest;
-import com.OBE.workflow.feature.student.request.StudentRequest;
-import com.OBE.workflow.other_entity_repo.repository.PersonRepository;
+import com.OBE.workflow.feature.student.request.StudentUpdateRequest;
+import com.OBE.workflow.feature.student.response.StudentResponse;
+import com.OBE.workflow.feature.student_class.StudentClass;
+import com.OBE.workflow.feature.student_class.StudentClassRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -17,81 +16,112 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class StudentService {
 
     private final StudentRepository studentRepository;
-    private final PersonRepository personRepository;
-    private final AccountRepository accountRepository;
-    private final EducationProgramRepository educationProgramRepository;
-    private final StudentMapper studentMapper;
-
-    @Value("${obe.system-admin.username}")
-    private String systemAdminUser;
+    private final StudentClassRepository studentClassRepository;
 
     @Transactional(readOnly = true)
-    public Page<Student> getStudents(Pageable pageable, StudentFilterRequest filter) {
+    public Page<StudentResponse> getStudents(Pageable pageable, StudentFilterRequest filter) {
+        // 1. Gộp các điều kiện lọc dựa trên StudentSpecification
         Specification<Student> spec = Specification
                 .where(StudentSpecification.hasId(filter.getId()))
                 .and(StudentSpecification.hasFullName(filter.getFullName()))
                 .and(StudentSpecification.hasGender(filter.getGender()))
-                .and(StudentSpecification.hasEducationProgramId(filter.getEducationProgramId()));
+                .and(StudentSpecification.hasStudentClasses(filter.getStudentClassesId()))
+                .and(StudentSpecification.hasEducationProgramId(filter.getEducationProgramId()))
+                .and(StudentSpecification.hasEducationProgramNames(filter.getEducationProgramName()))
+                .and(StudentSpecification.hasSubDepartmentId(filter.getSubDepartmentId()))
+                .and(StudentSpecification.hasDepartmentId(filter.getDepartmentId()));
 
-        return studentRepository.findAll(spec, pageable);
+        // 2. Thực hiện truy vấn với Specification và Pageable
+        // Lưu ý: studentRepository cần extends JpaSpecificationExecutor<Student>
+        Page<Student> entityPage = studentRepository.findAll(spec, pageable);
+
+        // 3. Map từ Entity sang Response DTO
+        return entityPage.map(StudentResponse::fromEntity);
     }
 
     @Transactional
-    public Student createStudent(StudentRequest request) {
-        if (personRepository.existsById(request.getId())
-                || systemAdminUser.equals(request.getId())) {
-            throw new AppException(ErrorCode.USER_EXISTED, "Mã sinh viên đã tồn tại hoặc trùng với admin hệ thống");
-        }
-
-        Student student = studentMapper.toEntity(request);
-
-        // Xử lý gán danh sách chương trình đào tạo (Many-to-Many)
-        setEducationPrograms(student, request.getEducationProgramIds());
-
-        return studentRepository.save(student);
-    }
-
-    @Transactional
-    public Student updateStudent(String id, StudentRequest request) {
+    public StudentResponse updateStudent(String id, StudentUpdateRequest request) {
+        // 1. Tìm sinh viên hiện tại
         Student student = studentRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND, "Không tìm thấy sinh viên để cập nhật"));
+                .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND,
+                        "Không tìm thấy sinh viên với mã: " + id));
 
-        studentMapper.updateStudent(student, request);
+        // 2. Cập nhật các thông tin cơ bản
+        student.setFullName(request.getFullName());
+        student.setGender(request.getGender());
 
-        // Cập nhật lại danh sách chương trình đào tạo
-        setEducationPrograms(student, request.getEducationProgramIds());
+        // 3. Xử lý cập nhật quan hệ ManyToMany (Sử dụng Helper Methods)
 
-        return studentRepository.save(student);
+        // BƯỚC A: Gỡ sinh viên khỏi toàn bộ các lớp hiện tại
+        // Sử dụng copy (new HashSet) để tránh ConcurrentModificationException khi duyệt Set
+        new HashSet<>(student.getStudentClasses()).forEach(clazz -> {
+            clazz.removeStudent(student);
+        });
+
+        // BƯỚC B: Thêm sinh viên vào các lớp mới từ request
+        request.getStudentClassesId().forEach(classId -> {
+            StudentClass newClass = studentClassRepository.findById(classId)
+                    .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND,
+                            "Không tìm thấy lớp học với mã: " + classId));
+
+            // Gọi helper từ phía StudentClass để Hibernate nhận diện thay đổi
+            newClass.addStudent(student);
+        });
+
+        // 4. Lưu thay đổi
+        // Lúc này Hibernate sẽ tự động so sánh và phát lệnh INSERT/DELETE vào bảng 'lop_sinh_vien_chi_tiet'
+        Student updatedStudent = studentRepository.save(student);
+        return StudentResponse.fromEntity(updatedStudent);
     }
 
-    private void setEducationPrograms(Student student, Set<String> programIds) {
-        if (programIds != null && !programIds.isEmpty()) {
-            List<EducationProgram> programs = educationProgramRepository.findAllById(programIds);
-            if (programs.size() != programIds.size()) {
-                throw new AppException(ErrorCode.ENTITY_NOT_FOUND, "Một hoặc nhiều chương trình đào tạo không tồn tại");
-            }
-            student.setEducationPrograms(new HashSet<>(programs));
+    @Transactional
+    public StudentResponse createStudent(StudentCreateRequest request) {
+        // 1. Kiểm tra trùng mã sinh viên
+        if (studentRepository.existsById(request.getId())) {
+            throw new AppException(ErrorCode.ENTITY_EXISTED,
+                    "Mã sinh viên [" + request.getId() + "] đã tồn tại trên hệ thống");
         }
+
+        // 2. Kiểm tra và tìm danh sách các lớp học
+        // Sử dụng Set để đảm bảo tính duy nhất và findById cho từng mã lớp
+        Set<StudentClass> studentClasses = request.getStudentClassesId().stream()
+                .map(classId -> studentClassRepository.findById(classId)
+                        .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND,
+                                "Không tìm thấy lớp học với mã: " + classId)))
+                .collect(Collectors.toSet());
+
+        // 3. Khởi tạo Entity Student từ Request sử dụng Builder
+        Student student = Student.builder()
+                .id(request.getId())
+                .fullName(request.getFullName())
+                .gender(request.getGender())
+                .studentClasses(studentClasses) // Gán tập hợp lớp đã tìm thấy
+                .build();
+
+        // 4. Lưu vào database và trả về Response DTO
+        Student savedStudent = studentRepository.save(student);
+
+        return StudentResponse.fromEntity(savedStudent);
     }
 
     @Transactional
     public void deleteStudent(String id) {
         Student student = studentRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND, "Không tìm thấy sinh viên để xóa"));
+                .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND,
+                        "Không tìm thấy sinh viên với mã: " + id));
 
-        if (accountRepository.existsByPerson(student)) {
-            throw new AppException(ErrorCode.DATA_INTEGRITY_VIOLATION,
-                    "Không thể xóa sinh viên này vì đã được cấp tài khoản hệ thống.");
-        }
+        // Xóa các mối quan hệ với lớp học trong bảng trung gian
+        student.getStudentClasses().clear();
 
+        // Thực hiện xóa thực thể sinh viên
         studentRepository.delete(student);
     }
 }

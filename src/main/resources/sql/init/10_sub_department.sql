@@ -1,34 +1,35 @@
-INSERT IGNORE INTO hoc_phan (ma_hoc_phan, ten_hoc_phan, ma_bo_mon) VALUES
-('IT0201', 'Lập trình hướng đối tượng', 'IT02'),
-('IT0202', 'Cấu trúc dữ liệu và Giải thuật', 'IT02'),
-('IT0101', 'Cơ sở dữ liệu', 'IT01'),
-('EC0201', 'Quản trị học đại cương', 'EC02'),
-('LN0101', 'Tiếng Anh chuyên ngành 1', 'LN01');
+-- Sử dụng INSERT IGNORE để tránh lỗi nếu chạy lại script
+INSERT IGNORE INTO khoa_bo_mon (ma_bo_mon, ten_bo_mon, ma_khoa, mieu_ta_khac) VALUES
+-- Thuộc Khoa Công nghệ Thông tin (FIT)
+('FIT_IS', 'Hệ thống thông tin', 'FIT', 'Chuyên về cơ sở dữ liệu và phân tích hệ thống'),
+('FIT_SE', 'Công nghệ phần mềm', 'FIT', 'Đào tạo quy trình phát triển phần mềm chuyên nghiệp'),
+('FIT_NET', 'Mạng máy tính và Truyền thông', 'FIT', 'Quản trị mạng và an ninh mạng'),
+('FIT_AI', 'Khoa học máy tính & AI', 'FIT', 'Nghiên cứu trí tuệ nhân tạo và học máy'),
 
-INSERT INTO hoc_phan_phien_ban (ma_hoc_phan, so_thu_tu_phien_ban, so_tin_chi, ap_dung_tu_ngay, ap_dung_den_ngay, ten_hoc_phan) VALUES
--- Học phần IT0201
-('IT0201', 1, 3, '2023-09-01', '2024-08-31', 'Lập trình hướng đối tượng (Legacy)'),
-('IT0201', 2, 3, '2024-09-01', NULL,         'Lập trình hướng đối tượng'),
+-- Thuộc Khoa Cơ khí (FME)
+('FME_AUTO', 'Công nghệ Kỹ thuật Ô tô', 'FME', 'Nghiên cứu động cơ và hệ thống điều khiển ô tô'),
+('FME_MEC', 'Cơ điện tử', 'FME', 'Sự kết hợp giữa cơ khí và điện tử điều khiển'),
 
--- Học phần IT0101
-('IT0101', 1, 4, '2024-01-01', NULL,         'Cơ sở dữ liệu nâng cao'),
+-- Thuộc Khoa Kinh tế (FE)
+('FE_ACC', 'Kế toán - Kiểm toán', 'FE', 'Đào tạo nghiệp vụ kế toán doanh nghiệp'),
+('FE_BA', 'Quản trị kinh doanh', 'FE', 'Đào tạo kỹ năng quản lý và khởi nghiệp'),
+('FE_MKT', 'Marketing', 'FE', 'Nghiên cứu thị trường và hành vi người tiêu dùng'),
 
--- Học phần EC0201
-('EC0201', 1, 3, '2023-09-01', '2025-01-01', 'Quản trị học'),
-('EC0201', 2, 2, '2025-01-02', NULL,         'Quản trị học hiện đại');
+-- Thuộc Khoa Ngoại ngữ (FL)
+('FL_ENG', 'Ngôn ngữ Anh', 'FL', 'Tiếng Anh thương mại và biên phiên dịch'),
+('FL_JPN', 'Ngôn ngữ Nhật', 'FL', 'Tiếng Nhật giao tiếp và văn hóa doanh nghiệp'),
 
--- Dữ liệu CO (Mục tiêu học phần) cho IT0201 v2
-INSERT INTO co (ma_co, noi_dung_muc_tieu, ma_hoc_phan, so_thu_tu_phien_ban) VALUES
-('CO1', 'Hiểu các nguyên lý cơ bản của OOP như đóng gói, kế thừa.', 'IT0201', 2),
-('CO2', 'Có khả năng thiết kế hệ thống phần mềm nhỏ bằng Java.', 'IT0201', 2);
+-- Thuộc Khoa Kỹ thuật Xây dựng (FCE)
+('FCE_CIV', 'Kỹ thuật Xây dựng Dân dụng', 'FCE', 'Thiết kế kết cấu công trình dân dụng'),
+('FCE_ROAD', 'Xây dựng Cầu đường', 'FCE', 'Thiết kế hệ thống hạ tầng giao thông'),
 
--- Dữ liệu CLO (Chuẩn đầu ra học phần) cho IT0201 v2
-INSERT INTO clo (ma_clo, noi_dung_chuan_dau_ra, ma_hoc_phan, so_thu_tu_phien_ban) VALUES
-('CLO1.1', 'Giải thích được khái niệm Class và Object.', 'IT0201', 2),
-('CLO1.2', 'Sử dụng thành thạo tính đa hình trong lập trình.', 'IT0201', 2),
-('CLO2.1', 'Xây dựng được ứng dụng quản lý có kết nối DB.', 'IT0201', 2);
+-- Thuộc Khoa Khoa học Cơ bản (FAS)
+('FAS_MATH', 'Toán học', 'FAS', 'Giảng dạy toán giải tích và toán ứng dụng'),
+('FAS_PHY', 'Vật lý lý thuyết', 'FAS', 'Nghiên cứu các nguyên lý vật lý cơ bản'),
 
-INSERT INTO diem_thanh_phan (ten_thanh_phan, quy_dinh, trong_so, ma_hoc_phan, so_thu_tu_phien_ban, ma_danh_gia) VALUES
-('Chuyên cần', 'Tham gia trên 80% số tiết', 0.1, 'IT0201', 2, 'CC'),
-('Kiểm tra giữa kỳ', 'Làm bài trên máy 60 phút', 0.3, 'IT0201', 2, 'GK'),
-('Đồ án cuối kỳ', 'Xây dựng phần mềm hoàn chỉnh', 0.6, 'IT0201', 2, 'CK');
+-- Thuộc Khoa Nông nghiệp (FAG)
+('FAG_CROP', 'Khoa học cây trồng', 'FAG', 'Nghiên cứu giống cây và kỹ thuật canh tác'),
+
+-- Thuộc Khoa Sư phạm (FSE)
+('FSE_MATH', 'Sư phạm Toán', 'FSE', 'Đào tạo giáo viên toán cấp THPT'),
+('FSE_LIT', 'Sư phạm Ngữ văn', 'FSE', 'Đào tạo giáo viên ngữ văn cấp THPT');

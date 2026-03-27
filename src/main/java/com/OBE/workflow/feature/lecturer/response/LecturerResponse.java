@@ -12,7 +12,6 @@ public class LecturerResponse {
     private String id;
     private String fullName;
     private String gender;
-
     // Tạm thời chỉ trả về danh sách mã bộ môn (IDs)
     private Set<String> subDepartmentIds;
 }

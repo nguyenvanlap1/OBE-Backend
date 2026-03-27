@@ -49,6 +49,6 @@ public class CLO {
     private List<CoCloMapping> coCloMappings = new ArrayList<>();
 
     @Builder.Default
-    @OneToMany(mappedBy = "clo")
+    @OneToMany(mappedBy = "clo", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AssessmentCloMapping> assessmentCloMappings = new ArrayList<>();
 }

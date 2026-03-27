@@ -4,9 +4,9 @@
 INSERT IGNORE INTO chuong_trinh_dao_tao
 (ma_chuong_trinh_dao_tao, ten_chuong_trinh_dao_tao, trinh_do_dao_tao, so_tin_chi_yeu_cau, ma_bo_mon)
 VALUES
-('CTDT_CNPM_2024', 'Công nghệ Phần mềm', 'Đại học chính quy', 145, 'IT02'),
-('CTDT_HTTT_2024', 'Hệ thống Thông tin', 'Đại học chính quy', 142, 'IT01'),
-('CTDT_KHMT_2024', 'Khoa học Máy tính', 'Đại học chính quy', 140, 'IT04');
+('CTDT_CNPM_2024', 'Công nghệ Phần mềm', 'Đại học chính quy', 145, 'FIT_SE'),
+('CTDT_HTTT_2024', 'Hệ thống Thông tin', 'Đại học chính quy', 142, 'FIT_SE'),
+('CTDT_KHMT_2024', 'Khoa học Máy tính', 'Đại học chính quy', 140, 'FIT_SE');
 
 -- ================================
 -- 2. PO

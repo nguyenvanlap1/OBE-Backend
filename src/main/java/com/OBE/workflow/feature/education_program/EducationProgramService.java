@@ -241,69 +241,67 @@ public class EducationProgramService {
     }
 
     private List<PO> updatePos(EducationProgram program, List<EducationProgramRequestUpdateDetail.PoRequest> poRequests) {
-        // 1. Kiểm tra null đầu tiên để tránh NPE
-        if (poRequests == null || poRequests.isEmpty()) {
-            return new ArrayList<>();
-        }
+        if (poRequests == null) return new ArrayList<>();
 
-        // 2. Kiểm tra trùng mã (poCode) trong request
-        Set<String> seenCodes = new HashSet<>();
-        for (var req : poRequests) {
-            if (!seenCodes.add(req.getPoCode())) {
-                throw new AppException(ErrorCode.INVALID_REQUEST, "Trùng mã PO trong danh sách: " + req.getPoCode());
-            }
-        }
-
-        // 1. Lấy danh sách hiện tại từ DB (thông qua cha)
+        // 1. Lấy danh sách hiện tại và xác định ID từ request
         List<PO> currentPos = program.getPos();
-        List<Long> requestIds = poRequests.stream()
+        Set<Long> requestIds = poRequests.stream()
                 .map(EducationProgramRequestUpdateDetail.PoRequest::getId)
-                .filter(Objects::nonNull) // bỏ null (PO mới)
-                .toList();
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
 
-        System.out.println("=== BEFORE REMOVE ===");
-        currentPos.forEach(po ->
-                System.out.println("PO: id=" + po.getId() + ", code=" + po.getPoCode())
-        );
+        // 2. BƯỚC XÓA: Xác định các PO cũ không còn trong request
+        List<PO> toDelete = currentPos.stream()
+                .filter(po -> !requestIds.contains(po.getId()))
+                .collect(Collectors.toList());
 
-        currentPos.removeIf(po -> !requestIds.contains(po.getId()));
+        if (!toDelete.isEmpty()) {
+            List<Long> deleteIds = toDelete.stream().map(PO::getId).toList();
 
-        System.out.println("=== AFTER REMOVE ===");
-        currentPos.forEach(po ->
-                System.out.println("PO: id=" + po.getId() + ", code=" + po.getPoCode())
-        );
+            // Gỡ khỏi list cha (RAM)
+            currentPos.removeAll(toDelete);
 
+            // Xóa triệt để trong DB (InBatch để dứt khoát)
+            poRepository.deleteAllInBatch(toDelete);
+            poRepository.flush(); // Quan trọng để giải phóng poCode cũ ngay lập tức
+        }
+
+        // 3. BƯỚC MÃ TẠM (Swap Logic): Chống lỗi Unique Constraint khi đổi tên PO1 <-> PO2
+        long tempSuffix = System.currentTimeMillis();
         for (var req : poRequests) {
             if (req.getId() != null) {
+                currentPos.stream()
+                        .filter(po -> po.getId().equals(req.getId()))
+                        .findFirst()
+                        .ifPresent(po -> po.setPoCode(po.getPoCode() + "_tmp_" + tempSuffix));
+            }
+        }
+        poRepository.flush(); // Đẩy toàn bộ mã tạm xuống DB
 
+        // 4. BƯỚC CẬP NHẬT CHÍNH THỨC & THÊM MỚI
+        for (var req : poRequests) {
+            if (req.getId() != null) {
+                // CẬP NHẬT: Mã gốc giờ đã trống chỗ, an tâm set lại
                 PO existing = currentPos.stream()
                         .filter(po -> po.getId().equals(req.getId()))
                         .findFirst()
-                        .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND, "Truyền id pos lạ vào: " + req.getId()));
+                        .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND, "Không tìm thấy PO ID: " + req.getId()));
 
                 existing.setPoCode(req.getPoCode());
                 existing.setContent(req.getContent());
-
             } else {
-                // check PO tồn tại trong DB cùng chương trình
-                boolean existsInDb = poRepository.existsByPoCodeAndEducationProgramId(req.getPoCode(), program.getId());
+                // THÊM MỚI: Check trùng code trong memory trước (đề phòng request gửi 2 mã mới giống nhau)
+                boolean isDuplicateInMem = currentPos.stream()
+                        .anyMatch(p -> p.getPoCode().equalsIgnoreCase(req.getPoCode()));
 
-                if (existsInDb) {
-                    // lấy PO từ DB và chỉ update nội dung
-                    PO poInDb = poRepository.findByPoCodeAndEducationProgramId(req.getPoCode(), program.getId())
-                            .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND, "PO trùng code nhưng không tìm thấy DB"));
-
-                    poInDb.setContent(req.getContent());
-                    // không thêm mới
-                    System.out.println("existsInDb: " + existsInDb);
-
-                    poRepository.findByPoCodeAndEducationProgramId(req.getPoCode(), program.getId())
-                            .ifPresentOrElse(
-                                    po -> System.out.println("PO from DB: id=" + po.getId() + ", code=" + po.getPoCode() + ", hash=" + System.identityHashCode(po)),
-                                    () -> System.out.println("PO from DB not found")
-                            );
+                if (isDuplicateInMem) {
+                    // Nếu trùng mã với một cái vừa được thêm/update, ta cập nhật nội dung cho nó
+                    currentPos.stream()
+                            .filter(p -> p.getPoCode().equalsIgnoreCase(req.getPoCode()))
+                            .findFirst()
+                            .ifPresent(p -> p.setContent(req.getContent()));
                 } else {
-                    // tạo PO mới
+                    // Tạo mới hoàn toàn
                     PO newPo = PO.builder()
                             .poCode(req.getPoCode())
                             .content(req.getContent())
@@ -313,69 +311,72 @@ public class EducationProgramService {
                 }
             }
         }
-        System.out.println("=== FINAL currentPos BEFORE RETURN ===");
 
-        for (PO po : currentPos) {
-            System.out.println(
-                    "PO: id=" + po.getId() +
-                            ", code=" + po.getPoCode() +
-                            ", hash=" + System.identityHashCode(po)
-            );
-        }
         return currentPos;
     }
 
     private List<PLO> updatePlos(EducationProgram program, List<EducationProgramRequestUpdateDetail.PloRequest> ploRequests) {
-        // 1. Kiểm tra null/empty đầu tiên
-        if (ploRequests == null || ploRequests.isEmpty()) {
-            return new ArrayList<>();
-        }
+        if (ploRequests == null) return new ArrayList<>();
 
-        // 2. Kiểm tra trùng mã (ploCode) trong request để đảm bảo tính duy nhất
-        Set<String> seenCodes = new HashSet<>();
-        for (var req : ploRequests) {
-            if (!seenCodes.add(req.getPloCode())) {
-                throw new AppException(ErrorCode.INVALID_REQUEST, "Trùng mã PLO trong danh sách: " + req.getPloCode());
-            }
-        }
-
-        // 3. Lấy danh sách PLO hiện tại từ chương trình đào tạo
+        // 1. Lấy danh sách hiện tại và xác định ID từ request
         List<PLO> currentPlos = program.getPlos();
-
-        // 4. Lọc các ID từ request để xác định những PLO nào cần giữ lại
-        List<Long> requestIds = ploRequests.stream()
+        Set<Long> requestIds = ploRequests.stream()
                 .map(EducationProgramRequestUpdateDetail.PloRequest::getId)
-                .filter(Objects::nonNull) // Lọc bỏ các PLO mới (chưa có ID)
-                .toList();
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
 
-        // 5. Xóa những PLO hiện tại không còn nằm trong danh sách request
-        currentPlos.removeIf(plo -> plo.getId() != null && !requestIds.contains(plo.getId()));
+        // 2. BƯỚC XÓA: Xác định các PLO cũ cần loại bỏ
+        List<PLO> toDelete = currentPlos.stream()
+                .filter(plo -> !requestIds.contains(plo.getId()))
+                .collect(Collectors.toList());
 
-        // 6. Duyệt qua từng request để thực hiện Cập nhật hoặc Thêm mới
-        // Xử lý PLO
+        if (!toDelete.isEmpty()) {
+            List<Long> deleteIds = toDelete.stream().map(PLO::getId).toList();
+
+            // --- QUAN TRỌNG: Xóa Mapping liên quan đến PLO trước khi xóa PLO ---
+            // Ví dụ: ploPoMappingRepository.deleteByPloIds(deleteIds);
+            // ploPoMappingRepository.flush();
+
+            // Gỡ khỏi list cha (RAM) và xóa trong DB
+            currentPlos.removeAll(toDelete);
+            ploRepository.deleteAllInBatch(toDelete);
+            ploRepository.flush(); // Giải phóng ploCode cũ ngay lập tức
+        }
+
+        // 3. BƯỚC MÃ TẠM (Swap Logic): Chống lỗi Unique khi đổi PLO1 <-> PLO2
+        long tempSuffix = System.currentTimeMillis();
         for (var req : ploRequests) {
             if (req.getId() != null) {
-                // Cập nhật PLO hiện có
+                currentPlos.stream()
+                        .filter(plo -> plo.getId().equals(req.getId()))
+                        .findFirst()
+                        .ifPresent(plo -> plo.setPloCode(plo.getPloCode() + "_tmp_" + tempSuffix));
+            }
+        }
+        ploRepository.flush();
+
+        // 4. BƯỚC CẬP NHẬT CHÍNH THỨC & THÊM MỚI
+        for (var req : ploRequests) {
+            if (req.getId() != null) {
+                // UPDATE: Mã gốc đã trống chỗ, an tâm set lại mã thật
                 PLO existing = currentPlos.stream()
                         .filter(plo -> plo.getId().equals(req.getId()))
                         .findFirst()
-                        .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND, "Không tìm thấy PLO với ID: " + req.getId()));
+                        .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND, "Không tìm thấy PLO ID: " + req.getId()));
 
                 existing.setPloCode(req.getPloCode());
                 existing.setContent(req.getContent());
-
             } else {
-                // check PLO đã tồn tại trong DB cùng chương trình
-                boolean existsInDb = ploRepository.existsByPloCodeAndEducationProgramId(req.getPloCode(), program.getId());
+                // INSERT: Kiểm tra trùng mã trong memory (đề phòng request gửi 2 mã mới giống nhau)
+                boolean isDuplicateInMem = currentPlos.stream()
+                        .anyMatch(p -> p.getPloCode().equalsIgnoreCase(req.getPloCode()));
 
-                if (existsInDb) {
-                    // Lấy PLO từ DB và chỉ update content
-                    PLO ploInDb = ploRepository.findByPloCodeAndEducationProgramId(req.getPloCode(), program.getId())
-                            .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND, "PLO trùng code nhưng không tìm thấy DB"));
-
-                    ploInDb.setContent(req.getContent());
+                if (isDuplicateInMem) {
+                    currentPlos.stream()
+                            .filter(p -> p.getPloCode().equalsIgnoreCase(req.getPloCode()))
+                            .findFirst()
+                            .ifPresent(p -> p.setContent(req.getContent()));
                 } else {
-                    // Tạo PLO mới
                     PLO newPlo = PLO.builder()
                             .ploCode(req.getPloCode())
                             .content(req.getContent())

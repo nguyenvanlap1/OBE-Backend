@@ -55,7 +55,7 @@ public class LecturerController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<LecturerResponse>> updateLecturer(
-            @PathVariable String id,
+            @PathVariable("id") String id,
             @Valid @RequestBody LecturerRequest request) {
 
         Lecturer updatedLecturer = lecturerService.updateLecturer(id, request);
@@ -70,7 +70,7 @@ public class LecturerController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteLecturer(@PathVariable String id) {
+    public ResponseEntity<ApiResponse<Void>> deleteLecturer(@PathVariable("id") String id) {
         lecturerService.deleteLecturer(id);
         return ResponseEntity.ok(
                 ApiResponse.<Void>builder()

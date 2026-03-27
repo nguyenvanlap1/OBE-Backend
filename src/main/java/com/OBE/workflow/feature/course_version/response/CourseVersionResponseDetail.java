@@ -66,6 +66,8 @@ public class CourseVersionResponseDetail {
     @Data
     @Builder
     public static class CoCloMappingResponse {
+        private Long coId;
+        private Long cloId;
         private String coCode;
         private String cloCode;
         private Double weight;
@@ -74,6 +76,8 @@ public class CourseVersionResponseDetail {
     @Data
     @Builder
     public static class AssessmentCloMappingResponse {
+        private Long assessmentId;
+        private Long cloId;
         private String assessmentCode;
         private String assessmentName;
         private String cloCode;
@@ -134,6 +138,8 @@ public class CourseVersionResponseDetail {
                 .coCloMappings(entity.getCos().stream()
                         .flatMap(co -> co.getCoCloMappings().stream() // Giả định co.getCoCloMappings() tồn tại
                                 .map(m -> CoCloMappingResponse.builder()
+                                        .cloId(m.getClo().getId())
+                                        .coId(co.getId())
                                         .coCode(co.getCoCode())
                                         .cloCode(m.getClo().getCloCode())
                                         .weight(m.getWeight())
@@ -144,6 +150,8 @@ public class CourseVersionResponseDetail {
                 .assessmentCloMappings(entity.getAssessments().stream()
                         .flatMap(as -> as.getAssessmentCloMappings().stream() // Giả định as.getAssessmentCloMappings() tồn tại
                                 .map(m -> AssessmentCloMappingResponse.builder()
+                                        .assessmentId(as.getId())
+                                        .cloId(m.getClo().getId())
                                         .assessmentCode(as.getAssessmentCode())
                                         .assessmentName(as.getName())
                                         .cloCode(m.getClo().getCloCode())

@@ -9,7 +9,7 @@ import java.util.Set;
 
 @Getter
 @Setter
-public class StudentRequest {
+public class StudentUpdateRequest {
     @NotBlank(message = "Mã sinh viên là bắt buộc")
     private String id;
 
@@ -20,6 +20,6 @@ public class StudentRequest {
     private String gender;
 
     // Danh sách mã chương trình đào tạo mà sinh viên theo học (Hỗ trợ song bằng)
-    @NotEmpty(message = "Sinh viên phải thuộc ít nhất một chương trình đào tạo")
-    private Set<String> educationProgramIds;
+    @NotEmpty(message = "Sinh viên phải thuộc ít nhất một lớp đào tạo")
+    private Set<String> studentClassesId;
 }

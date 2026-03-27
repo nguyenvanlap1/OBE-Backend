@@ -1,19 +1,16 @@
--- =============================================
--- 1. THÊM HỌC PHẦN (Course)
--- =============================================
-INSERT IGNORE INTO hoc_phan (ma_hoc_phan, ten_mac_dinh, ma_bo_mon) VALUES
-('IT101', 'Lập trình Java cơ bản', 'IT02'),
-('IT202', 'Phân tích thiết kế hệ thống', 'IT01');
+INSERT IGNORE INTO hoc_phan (ma_hoc_phan, ma_bo_mon) VALUES
+('IT101', 'FIT_SE'),
+('IT202', 'FIT_SE');
 
 -- =============================================
--- 2. THÊM PHIÊN BẢN HỌC PHẦN (CourseVersion)
+-- 3. THÊM PHIÊN BẢN HỌC PHẦN (CourseVersion)
 -- =============================================
 INSERT IGNORE INTO hoc_phan_phien_ban (ma_hoc_phan, so_thu_tu_phien_ban, so_tin_chi, ten_hoc_phan, ap_dung_tu_ngay) VALUES
 ('IT101', 1, 3, 'Lập trình Java nâng cao', '2024-01-01'),
 ('IT202', 1, 3, 'Phân tích thiết kế hướng đối tượng', '2024-01-01');
 
 -- =============================================
--- 3. THÊM CHUẨN ĐẦU RA (CLO)
+-- 4. THÊM CHUẨN ĐẦU RA (CLO) - Lưu ý ID tự tăng nếu có
 -- =============================================
 INSERT IGNORE INTO clo (id, ma_clo, noi_dung_chuan_dau_ra, ma_hoc_phan, so_thu_tu_phien_ban) VALUES
 (1, 'CLO1', 'Sử dụng thành thạo cấu trúc điều khiển trong Java', 'IT101', 1),
@@ -23,14 +20,14 @@ INSERT IGNORE INTO clo (id, ma_clo, noi_dung_chuan_dau_ra, ma_hoc_phan, so_thu_t
 (5, 'CLO3', 'Sử dụng công cụ CASE để vẽ biểu đồ hệ thống', 'IT202', 1);
 
 -- =============================================
--- 4. THÊM MỤC TIÊU HỌC PHẦN (CO)
+-- 5. THÊM MỤC TIÊU HỌC PHẦN (CO)
 -- =============================================
 INSERT IGNORE INTO co (id, ma_co, noi_dung_muc_tieu, ma_hoc_phan, so_thu_tu_phien_ban) VALUES
 (1, 'CO1', 'Có khả năng lập trình hướng đối tượng', 'IT101', 1),
 (2, 'CO1', 'Có khả năng phân tích yêu cầu phần mềm', 'IT202', 1);
 
 -- =============================================
--- 5. THÊM ĐIỂM THÀNH PHẦN (Assessment)
+-- 6. THÊM ĐIỂM THÀNH PHẦN (Assessment)
 -- =============================================
 INSERT IGNORE INTO diem_thanh_phan (id, ten_thanh_phan, trong_so, ma_hoc_phan, so_thu_tu_phien_ban, quy_dinh) VALUES
 (1, 'Bài tập về nhà', 0.2, 'IT101', 1, 'Bắt buộc'),
@@ -39,7 +36,7 @@ INSERT IGNORE INTO diem_thanh_phan (id, ten_thanh_phan, trong_so, ma_hoc_phan, s
 (4, 'Thi vấn đáp', 0.7, 'IT202', 1, 'Bắt buộc');
 
 -- =============================================
--- 6. ÁNH XẠ CO - CLO (CoCloMapping)
+-- 7. ÁNH XẠ CO - CLO (CoCloMapping)
 -- =============================================
 INSERT IGNORE INTO co_clo_mapping (co_id, clo_id, weight) VALUES
 (1, 1, 0.5),
@@ -48,7 +45,7 @@ INSERT IGNORE INTO co_clo_mapping (co_id, clo_id, weight) VALUES
 (2, 4, 0.6);
 
 -- =============================================
--- 7. ÁNH XẠ ASSESSMENT - CLO (AssessmentCloMapping)
+-- 8. ÁNH XẠ ASSESSMENT - CLO (AssessmentCloMapping)
 -- =============================================
 INSERT IGNORE INTO assessment_clo_mapping (assessment_id, clo_id, weight) VALUES
 (1, 1, 1.0),

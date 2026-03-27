@@ -43,6 +43,6 @@ public class CO {
     private CourseVersion courseVersion;
 
     @Builder.Default
-    @OneToMany(mappedBy = "co")
+    @OneToMany(mappedBy = "co", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CoCloMapping> coCloMappings = new ArrayList<>();
 }
