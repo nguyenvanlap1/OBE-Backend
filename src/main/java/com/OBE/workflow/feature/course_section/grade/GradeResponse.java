@@ -1,5 +1,6 @@
 package com.OBE.workflow.feature.course_section.grade;
 
+import com.OBE.workflow.feature.course_version.response.CourseVersionResponseDetail;
 import lombok.*;
 
 @Getter
@@ -9,7 +10,7 @@ import lombok.*;
 @AllArgsConstructor
 public class GradeResponse {
     private Long id;
-    private String assessmentCode; // ID của thành phần đánh giá (Chuyên cần, Giữa kỳ...)
+    private Long sectionAssessmentCode;
     private Double score;
 
     public static GradeResponse fromEntity(Grade entity) {
@@ -17,7 +18,7 @@ public class GradeResponse {
 
         return GradeResponse.builder()
                 .id(entity.getId())
-                .assessmentCode(entity.getAssessmentCode())
+                .sectionAssessmentCode(entity.getSectionAssessment().getSectionAssessmentCode())
                 .score(entity.getScore())
                 .build();
     }

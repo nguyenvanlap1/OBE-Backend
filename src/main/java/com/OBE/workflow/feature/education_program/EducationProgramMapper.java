@@ -20,20 +20,18 @@ public interface EducationProgramMapper {
     @Mapping(target = "departmentId", source = "subDepartment.department.id")
     @Mapping(target = "departmentName", source = "subDepartment.department.name")
     @Mapping(target = "schoolYearIds", expression = "java(entity.getSchoolYears() != null ? entity.getSchoolYears().stream().map(sy -> sy.getId()).toList() : java.util.Collections.emptyList())")
-    @Mapping(target = "totalCourses", expression = "java(entity.getCourseVersions() != null ? entity.getCourseVersions().size() : 0)")
+    @Mapping(target = "totalCourses", expression = "java(entity.getCourseDetails() != null ? entity.getCourseDetails().size() : 0)")
     EducationProgramResponse toResponse(EducationProgram entity);
 
     // --- Request sang Entity (Tạo mới) ---
     @Mapping(target = "subDepartment", ignore = true)
     @Mapping(target = "schoolYears", ignore = true)
-    @Mapping(target = "courseVersions", ignore = true)
     EducationProgram toEntity(EducationProgramRequest request);
 
     // --- Request sang Entity (Cập nhật bản ghi có sẵn) ---
     @Mapping(target = "id", ignore = true) // Không cho phép cập nhật ID (Primary Key)
     @Mapping(target = "subDepartment", ignore = true)
     @Mapping(target = "schoolYears", ignore = true)
-    @Mapping(target = "courseVersions", ignore = true)
     void updateEntity(EducationProgramRequest request, @MappingTarget EducationProgram entity);
 
     // --- Entity sang ResponseDetail (Đầy đủ PO, PLO, Mapping) ---
@@ -48,7 +46,6 @@ public interface EducationProgramMapper {
 
     @Mapping(target = "subDepartment", ignore = true) // Xử lý thủ công trong Service
     @Mapping(target = "schoolYears", ignore = true)   // Xử lý thủ công qua Repository.findAllById()
-    @Mapping(target = "courseVersions", ignore = true) // Xử lý thủ công
     @Mapping(target = "pos", ignore = true)            // Xử lý logic con (PO)
     @Mapping(target = "plos", ignore = true)           // Xử lý logic con (PLO)
     EducationProgram toEntity(EducationProgramRequestUpdateDetail requestCreateDetail);
@@ -90,7 +87,6 @@ public interface EducationProgramMapper {
     @Mapping(target = "subDepartment", ignore = true)
     @Mapping(target = "pos", ignore = true)
     @Mapping(target = "plos", ignore = true)
-    @Mapping(target = "courseVersions", ignore = true)
     @Mapping(target = "schoolYears", ignore = true)
     void updateEntity(EducationProgramRequestUpdateDetail request,
                       @MappingTarget EducationProgram entity);

@@ -29,11 +29,11 @@ INSERT IGNORE INTO co (id, ma_co, noi_dung_muc_tieu, ma_hoc_phan, so_thu_tu_phie
 -- =============================================
 -- 6. THÊM ĐIỂM THÀNH PHẦN (Assessment)
 -- =============================================
-INSERT IGNORE INTO diem_thanh_phan (id, ten_thanh_phan, trong_so, ma_hoc_phan, so_thu_tu_phien_ban, quy_dinh) VALUES
-(1, 'Bài tập về nhà', 0.2, 'IT101', 1, 'Bắt buộc'),
-(2, 'Thi cuối kỳ', 0.8, 'IT101', 1, 'Bắt buộc'),
-(3, 'Đồ án giữa kỳ', 0.3, 'IT202', 1, 'Bắt buộc'),
-(4, 'Thi vấn đáp', 0.7, 'IT202', 1, 'Bắt buộc');
+INSERT IGNORE INTO diem_thanh_phan (id, ma_danh_gia, ten_thanh_phan, trong_so, ma_hoc_phan, so_thu_tu_phien_ban, quy_dinh) VALUES
+(1, 1, 'Bài tập về nhà', 0.2, 'IT101', 1, 'Bắt buộc'),
+(2, 2, 'Thi cuối kỳ', 0.8, 'IT101', 1, 'Bắt buộc'),
+(3, 1, 'Đồ án giữa kỳ', 0.3, 'IT202', 1, 'Bắt buộc'),
+(4, 2, 'Thi vấn đáp', 0.7, 'IT202', 1, 'Bắt buộc');
 
 -- =============================================
 -- 7. ÁNH XẠ CO - CLO (CoCloMapping)

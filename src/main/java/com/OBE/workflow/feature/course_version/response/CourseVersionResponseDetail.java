@@ -56,7 +56,7 @@ public class CourseVersionResponseDetail {
     @Builder
     public static class AssessmentResponse {
         private Long id;
-        private String assessmentCode;
+        private Long assessmentCode;
         private String name;
         private String regulation;
         private Double weight;     // Trọng số (ví dụ: 0.2 cho chuyên cần)
@@ -78,7 +78,7 @@ public class CourseVersionResponseDetail {
     public static class AssessmentCloMappingResponse {
         private Long assessmentId;
         private Long cloId;
-        private String assessmentCode;
+        private Long assessmentCode;
         private String assessmentName;
         private String cloCode;
         private Double weight;

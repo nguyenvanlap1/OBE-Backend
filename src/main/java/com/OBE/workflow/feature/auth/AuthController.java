@@ -1,12 +1,13 @@
 package com.OBE.workflow.feature.auth;
 import com.OBE.workflow.conmon.config.JwtUtils;
 import com.OBE.workflow.conmon.dto.ApiResponse;
-import com.OBE.workflow.other_entity_repo.entity.Account;
-import com.OBE.workflow.other_entity_repo.entity.Role;
+import com.OBE.workflow.permission.account.Account;
+import com.OBE.workflow.permission.account.AccountRepository;
+import com.OBE.workflow.permission.entity.Role;
 import com.OBE.workflow.conmon.enums.SystemRoleType;
 import com.OBE.workflow.conmon.exception.AppException;
 import com.OBE.workflow.conmon.exception.ErrorCode;
-import com.OBE.workflow.other_entity_repo.service.RoleService;
+import com.OBE.workflow.permission.service.RoleService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -29,13 +30,6 @@ public class AuthController {
     final private PasswordEncoder passwordEncoder;
     final private AccountRepository accountRepository;
     final private RoleService roleService;
-
-    // Đọc giá trị từ YAML vào biến
-    @Value("${obe.system-admin.username}")
-    private String systemAdminUser;
-
-    @Value("${obe.system-admin.password}")
-    private String systemAdminPass;
 
     @PostMapping("/api/login")
     public ResponseEntity<ApiResponse<?>> login(

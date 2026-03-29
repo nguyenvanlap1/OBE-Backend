@@ -66,3 +66,26 @@ FROM chuan_dau_ra_chuong_trinh p
 JOIN muc_tieu_dao_tao po
   ON p.ma_chuong_trinh = po.ma_chuong_trinh
 WHERE p.ma_plo = 'PLO3' AND po.ma_po = 'PO3';
+
+-- =============================================
+-- 9. THÊM CHI TIẾT CHƯƠNG TRÌNH ĐÀO TẠO
+-- (Mapping: CTDT + Học phần phiên bản + Khối kiến thức)
+-- =============================================
+
+-- Thêm môn IT101 (Lập trình Java) vào CTDT Công nghệ Phần mềm 2024 thuộc Khối Cơ sở ngành
+INSERT INTO chi_tiet_chuong_trinh_dao_tao
+(ma_chuong_trinh_dao_tao, ma_hoc_phan, so_thu_tu_phien_ban, ma_so_khoi_kien_thuc)
+VALUES
+('CTDT_CNPM_2024', 'IT101', 1, 'KKT_CSN');
+
+-- Thêm môn IT202 (Phân tích thiết kế) vào CTDT Công nghệ Phần mềm 2024 thuộc Khối Chuyên ngành
+INSERT INTO chi_tiet_chuong_trinh_dao_tao
+(ma_chuong_trinh_dao_tao, ma_hoc_phan, so_thu_tu_phien_ban, ma_so_khoi_kien_thuc)
+VALUES
+('CTDT_CNPM_2024', 'IT202', 1, 'KKT_CN');
+
+-- Thêm môn IT101 vào CTDT Hệ thống Thông tin 2024 thuộc Khối Đại cương (Ví dụ)
+INSERT INTO chi_tiet_chuong_trinh_dao_tao
+(ma_chuong_trinh_dao_tao, ma_hoc_phan, so_thu_tu_phien_ban, ma_so_khoi_kien_thuc)
+VALUES
+('CTDT_HTTT_2024', 'IT101', 1, 'KKT_DC');

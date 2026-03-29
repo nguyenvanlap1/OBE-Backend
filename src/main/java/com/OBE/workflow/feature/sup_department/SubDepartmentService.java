@@ -7,7 +7,7 @@ import com.OBE.workflow.feature.department.Department;
 import com.OBE.workflow.conmon.exception.AppException;
 import com.OBE.workflow.conmon.exception.ErrorCode;
 import com.OBE.workflow.feature.department.DepartmentRepository;
-import com.OBE.workflow.other_entity_repo.repository.AccountRoleSubDepartmentRepository;
+import com.OBE.workflow.permission.repository.AccountRoleSubDepartmentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

@@ -27,7 +27,10 @@ public enum ErrorCode {
     // ===== SYSTEM =====
     INTERNAL_SERVER_ERROR(500, "Lỗi hệ thống"),
     DATABASE_ERROR(500, "Lỗi cơ sở dữ liệu"),
-    UNCATEGORIZED_EXCEPTION(9999, "Lỗi chưa phân loại");
+    UNCATEGORIZED_EXCEPTION(9999, "Lỗi chưa phân loại"),
+    INVALID_INPUT(543, "Đầu vào không hợp lệ"),
+    INVALID_KEY(5453, "Trùng mã"),
+    INVALID_PASSWORD(54354,"Mật khẩu cũ không chính xác" );
     private final int code;
     private final String message;
 }

@@ -4,16 +4,16 @@ import com.OBE.workflow.feature.course_section.CourseSection;
 import com.OBE.workflow.feature.course_section.grade.Grade;
 import com.OBE.workflow.feature.student.Student;
 import jakarta.persistence.*;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Builder
 @Getter
 @Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(
         name = "dang_ky_hoc_phan",

@@ -1,5 +1,6 @@
 package com.OBE.workflow.feature.course_version.assessment;
 
+import com.OBE.workflow.feature.course_section.section_assessment.SectionAssessment;
 import com.OBE.workflow.feature.course_version.CourseVersion;
 import com.OBE.workflow.feature.course_version.mapping.AssessmentCloMapping;
 import jakarta.persistence.*;
@@ -30,7 +31,7 @@ public class Assessment {
     private Long id;
 
     @Column(name = "ma_danh_gia", nullable = false)
-    private String assessmentCode;
+    private Long assessmentCode;
 
     @Column(name = "ten_thanh_phan", nullable = false)
     private String name; // Ví dụ: Thi lý thuyết cuối kỳ, Bài tập...
@@ -51,4 +52,19 @@ public class Assessment {
     @Builder.Default
     @OneToMany(mappedBy = "assessment", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AssessmentCloMapping> assessmentCloMappings = new ArrayList<>();
+
+    // Thêm vào trong class Assessment.java
+    @OneToMany(mappedBy = "originalAssessment")
+    private List<SectionAssessment> sectionAssessments = new ArrayList<>();
+
+    @PreRemove
+    private void preRemove() {
+        // Trước khi Assessment bị xóa, duyệt qua các trạm trung chuyển
+        // và set link về null để không bị lỗi ràng buộc khóa ngoại
+        if (sectionAssessments != null) {
+            for (SectionAssessment sa : sectionAssessments) {
+                sa.setOriginalAssessment(null);
+            }
+        }
+    }
 }

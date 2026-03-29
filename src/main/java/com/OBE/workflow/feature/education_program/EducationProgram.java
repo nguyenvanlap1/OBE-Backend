@@ -3,6 +3,7 @@ package com.OBE.workflow.feature.education_program;
 import com.OBE.workflow.feature.course_version.CourseVersion;
 import com.OBE.workflow.feature.education_program.plo.PLO;
 import com.OBE.workflow.feature.education_program.po.PO;
+import com.OBE.workflow.feature.education_program.program_course_detail.ProgramCourseDetail;
 import com.OBE.workflow.feature.sup_department.SubDepartment;
 import com.OBE.workflow.feature.school_year.SchoolYear;
 import jakarta.persistence.*;
@@ -54,19 +55,10 @@ public class EducationProgram {
     private List<SchoolYear> schoolYears;
 
 
-    @ManyToMany
-    @JoinTable(
-            name = "chi_tiet_chuong_trinh_dao_tao",
-            joinColumns = @JoinColumn(name = "ma_chuong_trinh_dao_tao"),
-            inverseJoinColumns = {
-                    @JoinColumn(name = "ma_hoc_phan", referencedColumnName = "ma_hoc_phan"),
-                    @JoinColumn(name = "so_thu_tu_phien_ban", referencedColumnName = "so_thu_tu_phien_ban")
-            },
-            uniqueConstraints = @UniqueConstraint(columnNames = {"ma_chuong_trinh_dao_tao", "ma_hoc_phan", "so_thu_tu_phien_ban"})
-            // Ràng buộc quan trọng: Tránh trùng lặp phiên bản học phần trong cùng 1 chương trình
-    )
-    @NonNull
-    private List<CourseVersion> courseVersions;
+    // ĐÃ ĐỔI TẠI ĐÂY: Chuyển sang OneToMany để quản lý chi tiết kèm Khối kiến thức
+    @Builder.Default
+    @OneToMany(mappedBy = "educationProgram", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProgramCourseDetail> courseDetails = new ArrayList<>();
 
     // 1. Thêm danh sách Mục tiêu đào tạo (PO)
     @Builder.Default

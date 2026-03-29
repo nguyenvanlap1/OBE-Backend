@@ -5,6 +5,7 @@ import com.OBE.workflow.feature.course_version.assessment.Assessment;
 import com.OBE.workflow.feature.course_version.clo.CLO;
 import com.OBE.workflow.feature.course_version.co.CO;
 import com.OBE.workflow.feature.education_program.EducationProgram;
+import com.OBE.workflow.feature.education_program.program_course_detail.ProgramCourseDetail;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
@@ -58,10 +59,14 @@ public class CourseVersion {
     @Column(name = "ap_dung_den_ngay")
     private LocalDate toDate; // Null nghĩa là phiên bản này vẫn đang được áp dụng
 
-    // Trong Entity CourseVersion
-    @ManyToMany(mappedBy = "courseVersions", fetch = FetchType.LAZY)
-    @JsonIgnore // Cách nhanh nhất: Chặn Jackson không cho quét vào biến này khi tạo JSON
-    private List<EducationProgram> educationPrograms;
+    @Builder.Default
+    @OneToMany(
+            mappedBy = "courseVersion",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
+    )
+    private List<ProgramCourseDetail> programCourseDetails = new ArrayList<>();
 
     // Trong file CourseVersion.java
     @Builder.Default

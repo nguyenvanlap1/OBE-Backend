@@ -2,11 +2,14 @@ package com.OBE.workflow.feature.education_program;
 
 import com.OBE.workflow.conmon.dto.PageResponse;
 import com.OBE.workflow.conmon.dto.ApiResponse;
+import com.OBE.workflow.feature.education_program.program_course_detail.ProgramCourseDetailService;
+import com.OBE.workflow.feature.education_program.program_course_detail.ProgramCourseDetailResponse;
 import com.OBE.workflow.feature.education_program.request.EducationProgramFilterRequest;
 import com.OBE.workflow.feature.education_program.request.EducationProgramRequest;
 import com.OBE.workflow.feature.education_program.request.EducationProgramRequestUpdateDetail;
 import com.OBE.workflow.feature.education_program.response.EducationProgramResponse;
 import com.OBE.workflow.feature.education_program.response.EducationProgramResponseDetail;
+import com.OBE.workflow.feature.education_program.response.ProgramCourseDetailListResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
@@ -22,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 public class EducationProgramController {
 
     private final EducationProgramService educationProgramService;
+    private final ProgramCourseDetailService programCourseDetailService;
     private final EducationProgramMapper educationProgramMapper;
 
     @PostMapping
@@ -111,20 +115,22 @@ public class EducationProgramController {
                         .build()
         );
     }
-
     // --- Endpoint mở rộng: Quản lý học phần trong chương trình ---
     @PostMapping("/{id}/courses")
-    public ResponseEntity<ApiResponse<Void>> addCourse(
+    public ResponseEntity<ApiResponse<ProgramCourseDetailResponse>> addCourse(
             @PathVariable("id") String programId,
             @RequestParam("courseId") String courseId,
-            @RequestParam(value = "versionNumber", required = false) Integer versionNumber) {
+            @RequestParam(value = "versionNumber", required = false) Integer versionNumber,
+            @RequestParam(value = "knowledgeBlockId", required = false) String knowledgeBlockId) {
 
-        educationProgramService.addCourseToProgram(programId, courseId, versionNumber);
+        // ĐỔI TẠI ĐÂY: Gọi Service chuyên biệt và truyền thêm KB ID
+        ProgramCourseDetailResponse programCourseDetailResponse = programCourseDetailService.addCourseToProgram(programId, courseId, versionNumber, knowledgeBlockId);
 
         return ResponseEntity.ok(
-                ApiResponse.<Void>builder()
+                ApiResponse.<ProgramCourseDetailResponse>builder()
                         .status(HttpStatus.OK.value())
                         .message("Đã thêm học phần vào chương trình đào tạo")
+                        .data(programCourseDetailResponse)
                         .build()
         );
     }
@@ -132,10 +138,10 @@ public class EducationProgramController {
     @DeleteMapping("/{id}/courses")
     public ResponseEntity<ApiResponse<Void>> removeCourse(
             @PathVariable("id") String programId,
-            @RequestParam("courseId") String courseId,
-            @RequestParam("versionNumber") Integer versionNumber) {
+            @RequestParam("courseId") String courseId) {
 
-        educationProgramService.removeCourseFromProgram(programId, courseId, versionNumber);
+        // ĐỔI TẠI ĐÂY: Chỉ cần programId và courseId là đủ để xác định bản ghi cần xóa
+        programCourseDetailService.removeCourseFromProgram(programId, courseId);
 
         return ResponseEntity.ok(
                 ApiResponse.<Void>builder()
@@ -158,6 +164,37 @@ public class EducationProgramController {
                         .status(HttpStatus.OK.value())
                         .message("Cập nhật chi tiết PO, PLO và Mapping thành công")
                         .data(detail)
+                        .build()
+        );
+    }
+
+    // --- Lấy danh sách học phần kèm khối kiến thức của một CTĐT ---
+    @GetMapping("/{id}/courses")
+    public ResponseEntity<ApiResponse<ProgramCourseDetailListResponse>> getProgramCourses(
+            @PathVariable("id") String programId) {
+        // Gọi Service trả về Object chứa List chi tiết
+        ProgramCourseDetailListResponse data = programCourseDetailService.getCourseDetailsByProgramId(programId);
+        return ResponseEntity.ok(
+                ApiResponse.<ProgramCourseDetailListResponse>builder()
+                        .status(HttpStatus.OK.value())
+                        .message("Danh sách học phần trong chương trình đào tạo")
+                        .data(data)
+                        .build()
+        );
+    }
+    @PatchMapping("/{id}/courses/{courseId}/knowledge-block")
+    public ResponseEntity<ApiResponse<ProgramCourseDetailResponse>> updateCourseKnowledgeBlock(
+            @PathVariable("id") String programId,
+            @PathVariable("courseId") String courseId,
+            @RequestParam("knowledgeBlockId") String knowledgeBlockId) {
+
+        ProgramCourseDetailResponse updated = programCourseDetailService.updateKnowledgeBlock(programId, courseId, knowledgeBlockId);
+
+        return ResponseEntity.ok(
+                ApiResponse.<ProgramCourseDetailResponse>builder()
+                        .status(HttpStatus.OK.value())
+                        .message("Cập nhật khối kiến thức thành công")
+                        .data(updated)
                         .build()
         );
     }

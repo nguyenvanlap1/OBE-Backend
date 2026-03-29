@@ -1,7 +1,7 @@
 package com.OBE.workflow.feature.lecturer;
 
 import com.OBE.workflow.feature.sup_department.SubDepartment;
-import com.OBE.workflow.other_entity_repo.entity.Person;
+import com.OBE.workflow.permission.entity.Person;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;

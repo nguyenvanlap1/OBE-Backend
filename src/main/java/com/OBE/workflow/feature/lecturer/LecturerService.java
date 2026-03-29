@@ -2,12 +2,12 @@ package com.OBE.workflow.feature.lecturer;
 
 import com.OBE.workflow.conmon.exception.AppException;
 import com.OBE.workflow.conmon.exception.ErrorCode;
-import com.OBE.workflow.feature.auth.AccountRepository;
+import com.OBE.workflow.permission.account.AccountRepository;
 import com.OBE.workflow.feature.lecturer.request.LecturerFilterRequest;
 import com.OBE.workflow.feature.lecturer.request.LecturerRequest;
 import com.OBE.workflow.feature.sup_department.SubDepartment;
 import com.OBE.workflow.feature.sup_department.SubDepartmentRepository;
-import com.OBE.workflow.other_entity_repo.repository.PersonRepository;
+import com.OBE.workflow.permission.repository.PersonRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;

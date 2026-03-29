@@ -1,6 +1,7 @@
 package com.OBE.workflow.feature.course_section;
 
 import com.OBE.workflow.feature.course_section.enrollment.Enrollment;
+import com.OBE.workflow.feature.course_section.section_assessment.SectionAssessment;
 import com.OBE.workflow.feature.course_version.CourseVersion;
 import com.OBE.workflow.feature.lecturer.Lecturer;
 import com.OBE.workflow.feature.semester.Semester;
@@ -43,4 +44,8 @@ public class CourseSection {
     @Builder.Default
     @OneToMany(mappedBy = "courseSection", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Enrollment> enrollments = new ArrayList<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "courseSection", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SectionAssessment> sectionAssessments = new ArrayList<>();
 }

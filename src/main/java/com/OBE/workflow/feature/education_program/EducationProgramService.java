@@ -140,50 +140,6 @@ public class EducationProgramService {
     }
 
     @Transactional
-    public void addCourseToProgram(String programId, String courseId, Integer versionNumber) {
-        // 1. Tìm chương trình đào tạo
-        EducationProgram program = educationProgramRepository.findById(programId)
-                .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND, "Không tìm thấy chương trình đào tạo"));
-
-        // 2. Xử lý chọn phiên bản học phần
-        CourseVersion versionToAdd;
-        if (versionNumber == null) {
-            // Nếu không truyền version: Tìm phiên bản Active có số version cao nhất
-            versionToAdd = courseVersionRepository.findActiveVersion(courseId)
-                    .orElseGet(() -> courseVersionRepository.findFirstByCourseIdOrderByVersionNumberDesc(courseId)
-                            .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND, "Học phần này chưa có phiên bản nào")));
-        } else {
-            // Nếu có truyền version: Tìm đúng phiên bản đó
-            versionToAdd = courseVersionRepository.findByCourseIdAndVersionNumber(courseId, versionNumber)
-                    .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND, "Không tìm thấy phiên bản học phần yêu cầu"));
-        }
-
-        // 3. Kiểm tra xem đã tồn tại trong danh sách chưa để tránh trùng lặp (Set-like behavior)
-        if (program.getCourseVersions().contains(versionToAdd)) {
-            throw new AppException(ErrorCode.ENTITY_EXISTED, "Học phần phiên bản này đã có trong chương trình");
-        }
-
-        // 4. Thêm vào danh sách và lưu
-        program.getCourseVersions().add(versionToAdd);
-        educationProgramRepository.save(program);
-    }
-
-    @Transactional
-    public void removeCourseFromProgram(String programId, String courseId, Integer versionNumber) {
-        EducationProgram program = educationProgramRepository.findById(programId)
-                .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND, "Không tìm thấy chương trình đào tạo"));
-
-        // Tìm đúng đối tượng phiên bản trong list hiện tại để xóa
-        CourseVersion versionToRemove = program.getCourseVersions().stream()
-                .filter(v -> v.getCourse().getId().equals(courseId) && v.getVersionNumber().equals(versionNumber))
-                .findFirst()
-                .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND, "Học phần này không tồn tại trong chương trình"));
-
-        program.getCourseVersions().remove(versionToRemove);
-        educationProgramRepository.save(program);
-    }
-
-    @Transactional
     public EducationProgramResponseDetail createProgramDetail(EducationProgramRequestUpdateDetail request) {
         if(educationProgramRepository.existsById(request.getId())) {
             throw (new AppException(ErrorCode.ENTITY_EXISTED, "Có 1 chương trình đào tạo đã tồn tại với mã: " + request.getId()));
@@ -245,6 +201,25 @@ public class EducationProgramService {
 
         // 1. Lấy danh sách hiện tại và xác định ID từ request
         List<PO> currentPos = program.getPos();
+
+        Set<Long> assignedIds = new HashSet<>();
+        for (var req : poRequests) {
+            if (req.getId() != null) assignedIds.add(req.getId());
+        }
+
+        for (var req : poRequests) {
+            if (req.getId() == null) {
+                currentPos.stream()
+                        .filter(po -> po.getPoCode().equalsIgnoreCase(req.getPoCode()))
+                        .filter(po -> !assignedIds.contains(po.getId()))
+                        .findFirst()
+                        .ifPresent(existing -> {
+                            req.setId(existing.getId());
+                            assignedIds.add(existing.getId());
+                        });
+            }
+        }
+
         Set<Long> requestIds = poRequests.stream()
                 .map(EducationProgramRequestUpdateDetail.PoRequest::getId)
                 .filter(Objects::nonNull)
@@ -320,6 +295,26 @@ public class EducationProgramService {
 
         // 1. Lấy danh sách hiện tại và xác định ID từ request
         List<PLO> currentPlos = program.getPlos();
+
+        // --- BƯỚC 0: TIỀN XỬ LÝ CỨU ID THÔNG MINH ---
+        Set<Long> assignedIds = new HashSet<>();
+        for (var req : ploRequests) {
+            if (req.getId() != null) assignedIds.add(req.getId());
+        }
+
+        for (var req : ploRequests) {
+            if (req.getId() == null) {
+                currentPlos.stream()
+                        .filter(plo -> plo.getPloCode().equalsIgnoreCase(req.getPloCode()))
+                        .filter(plo -> !assignedIds.contains(plo.getId()))
+                        .findFirst()
+                        .ifPresent(existing -> {
+                            req.setId(existing.getId());
+                            assignedIds.add(existing.getId());
+                        });
+            }
+        }
+
         Set<Long> requestIds = ploRequests.stream()
                 .map(EducationProgramRequestUpdateDetail.PloRequest::getId)
                 .filter(Objects::nonNull)

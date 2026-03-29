@@ -2,28 +2,31 @@ package com.OBE.workflow.feature.course_section;
 
 import com.OBE.workflow.conmon.dto.ApiResponse;
 import com.OBE.workflow.conmon.dto.PageResponse;
-import com.OBE.workflow.feature.course_section.grade.GradeRequest;
+import com.OBE.workflow.feature.course_section.enrollment.EnrollmentRequest;
+import com.OBE.workflow.feature.course_section.enrollment.EnrollmentResponse;
+import com.OBE.workflow.feature.course_section.reponse.CourseSectionGradeResponse;
 import com.OBE.workflow.feature.course_section.reponse.CourseSectionResponse;
-import com.OBE.workflow.feature.course_section.reponse.CourseSectionResponseDetail;
 import com.OBE.workflow.feature.course_section.request.CourseSectionCreateRequest;
 import com.OBE.workflow.feature.course_section.request.CourseSectionFilterRequest;
 import com.OBE.workflow.feature.course_section.request.CourseSectionUpdateRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/course-sections")
 @RequiredArgsConstructor
+@Slf4j
 public class CourseSectionController {
 
     private final CourseSectionService courseSectionService;
+
+    // --- QUẢN LÝ LỚP HỌC PHẦN (CRUD) ---
 
     @PostMapping("/search")
     public ResponseEntity<ApiResponse<PageResponse<CourseSectionResponse, CourseSectionResponse>>> getCourseSections(
@@ -40,24 +43,36 @@ public class CourseSectionController {
                         .build()
         );
     }
-    /**
-     * Lấy chi tiết lớp học phần (bao gồm cấu hình điểm và danh sách sinh viên)
-     * GET /api/course-sections/{id}
-     */
+
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<CourseSectionResponseDetail>> getCourseSectionDetail(
+    public ResponseEntity<ApiResponse<CourseSectionResponse>> getCourseSectionDetail(
             @PathVariable("id") String id) {
 
-        CourseSectionResponseDetail detail = courseSectionService.getCourseSectionDetail(id);
+        CourseSectionResponse detail = courseSectionService.getCourseSection(id);
 
         return ResponseEntity.ok(
-                ApiResponse.<CourseSectionResponseDetail>builder()
+                ApiResponse.<CourseSectionResponse>builder()
                         .status(HttpStatus.OK.value())
-                        .message("Chi tiết lớp học phần [" + id + "]")
+                        .message("Chi tiết điểm lớp học phần [" + id + "]")
                         .data(detail)
                         .build()
         );
     }
+
+    @GetMapping("/{id}/grades")
+    public ResponseEntity<ApiResponse<CourseSectionGradeResponse>> getCourseGradeResponse(
+            @PathVariable("id") String id){
+        CourseSectionGradeResponse response = courseSectionService.getCourseGradeResponse(id);
+
+        return ResponseEntity.ok(
+                ApiResponse.<CourseSectionGradeResponse>builder()
+                        .status(HttpStatus.OK.value())
+                        .message("Thông tin lớp học phần [" + id + "]")
+                        .data(response)
+                        .build()
+        );
+    }
+
 
     @PostMapping
     public ResponseEntity<ApiResponse<CourseSectionResponse>> createCourseSection(
@@ -102,35 +117,27 @@ public class CourseSectionController {
         );
     }
 
-    // --- ENDPOINTS QUẢN LÝ SINH VIÊN & ĐIỂM SỐ ---
+    // --- QUẢN LÝ SINH VIÊN TRONG LỚP ---
 
-    /**
-     * Thêm sinh viên vào lớp học phần
-     * POST /api/course-sections/{sectionId}/students/{studentId}
-     */
     @PostMapping("/{sectionId}/students/{studentId}")
-    public ResponseEntity<ApiResponse<Void>> addStudentToSection(
-            @PathVariable String sectionId,
-            @PathVariable String studentId) {
+    public ResponseEntity<ApiResponse<EnrollmentResponse>> addStudentToSection(
+            @PathVariable("sectionId") String sectionId,
+            @PathVariable("studentId") String studentId) {
 
-        courseSectionService.addStudentToSection(studentId, sectionId);
-
+        EnrollmentResponse enrollmentResponse = courseSectionService.addStudentToSection(studentId, sectionId);
         return ResponseEntity.ok(
-                ApiResponse.<Void>builder()
+                ApiResponse.<EnrollmentResponse>builder()
                         .status(HttpStatus.OK.value())
                         .message("Đã thêm sinh viên [" + studentId + "] vào lớp [" + sectionId + "]")
+                        .data(enrollmentResponse)
                         .build()
         );
     }
 
-    /**
-     * Xóa sinh viên khỏi lớp học phần
-     * DELETE /api/course-sections/{sectionId}/students/{studentId}
-     */
     @DeleteMapping("/{sectionId}/students/{studentId}")
     public ResponseEntity<ApiResponse<Void>> removeStudentFromSection(
-            @PathVariable String sectionId,
-            @PathVariable String studentId) {
+            @PathVariable("sectionId") String sectionId,
+            @PathVariable("studentId") String studentId) {
 
         courseSectionService.removeStudentFromSection(studentId, sectionId);
 
@@ -143,56 +150,52 @@ public class CourseSectionController {
     }
 
     /**
-     * Cập nhật điểm cho một sinh viên cụ thể trong lớp
-     * PUT /api/course-sections/{sectionId}/students/{studentId}/grades
+     * Cập nhật danh sách nhiều đầu điểm cùng lúc cho 1 sinh viên (Batch)
      */
-    @PutMapping("/{sectionId}/students/{studentId}/grades")
-    public ResponseEntity<ApiResponse<Void>> updateStudentGrades(
-            @PathVariable String sectionId,
-            @PathVariable String studentId,
-            @Valid @RequestBody List<GradeRequest> grades) {
+    @PutMapping("/{sectionId}/students/{enrollmentId}/grades-batch")
+    public ResponseEntity<ApiResponse<EnrollmentResponse>> updateStudentGradesBatch(
+            @PathVariable String enrollmentId,
+            @Valid @RequestBody EnrollmentRequest request) {
 
-        courseSectionService.updateStudentGrades(studentId, sectionId, grades);
+        EnrollmentResponse enrollmentResponse =  courseSectionService.updateStudentGrade(request);
 
         return ResponseEntity.ok(
-                ApiResponse.<Void>builder()
+                ApiResponse.<EnrollmentResponse>builder()
                         .status(HttpStatus.OK.value())
-                        .message("Cập nhật điểm cho sinh viên [" + studentId + "] thành công")
+                        .message("Cập nhật danh sách điểm thành công")
+                        .data(enrollmentResponse)
                         .build()
         );
     }
 
     /**
-     * Đồng bộ khung điểm cho toàn bộ lớp (Dùng khi giảng viên thay đổi cấu hình CourseVersion)
-     * POST /api/course-sections/{sectionId}/sync-grades
+     * Cập nhật một đầu điểm đơn lẻ (Phục vụ AG Grid Edit)
+     * URL: PATCH /api/course-sections/enrollments/{enrollmentId}/grades/{saCode}?score=9.5
      */
-    @PostMapping("/{sectionId}/sync-grades")
-    public ResponseEntity<ApiResponse<Void>> syncAllGrades(@PathVariable String sectionId) {
+    @PatchMapping("/enrollments/{enrollmentId}/grades/{saCode}")
+    public ResponseEntity<ApiResponse<EnrollmentResponse>> updateSingleStudentGrade(
+            @PathVariable("enrollmentId") Long enrollmentId, // Thêm "enrollmentId"
+            @PathVariable("saCode") Long saCode,             // Thêm "saCode"
+            @RequestParam("score") Double score) {
 
-        courseSectionService.syncAllGrades(sectionId);
+        // Log đầu vào để kiểm tra giá trị từ Frontend gửi lên
+        log.info("Yêu cầu cập nhật điểm: enrollmentId={}, saCode={}, score={}", enrollmentId, saCode, score);
 
-        return ResponseEntity.ok(
-                ApiResponse.<Void>builder()
-                        .status(HttpStatus.OK.value())
-                        .message("Đã đồng bộ khung điểm cho toàn bộ lớp [" + sectionId + "]")
-                        .build()
-        );
-    }
+        try {
+            EnrollmentResponse response = courseSectionService.updateSingleStudentGrade(enrollmentId, saCode, score);
+            log.info("Cập nhật điểm thành công cho enrollmentId: {}", enrollmentId);
 
-    /**
-     * Kiểm tra tính nhất quán của điểm số trong lớp
-     * GET /api/course-sections/{sectionId}/validate-grades
-     */
-    @GetMapping("/{sectionId}/validate-grades")
-    public ResponseEntity<ApiResponse<Void>> validateGrades(@PathVariable String sectionId) {
-
-        courseSectionService.validateGrades(sectionId);
-
-        return ResponseEntity.ok(
-                ApiResponse.<Void>builder()
-                        .status(HttpStatus.OK.value())
-                        .message("Dữ liệu điểm của lớp [" + sectionId + "] hợp lệ và đồng nhất")
-                        .build()
-        );
+            return ResponseEntity.ok(
+                    ApiResponse.<EnrollmentResponse>builder()
+                            .status(HttpStatus.OK.value())
+                            .message("Cập nhật điểm thành công")
+                            .data(response)
+                            .build()
+            );
+        } catch (Exception e) {
+            // Log lỗi chi tiết kèm theo StackTrace để biết chính xác dòng nào bị lỗi
+            log.error("Lỗi khi cập nhật điểm cho enrollmentId {}: {}", enrollmentId, e.getMessage(), e);
+            throw e; // Throw để GlobalExceptionHandler hoặc Spring xử lý trả về 500/400
+        }
     }
 }

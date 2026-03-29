@@ -1,15 +1,23 @@
 package com.OBE.workflow.feature.course_section;
+
 import com.OBE.workflow.conmon.exception.AppException;
 import com.OBE.workflow.conmon.exception.ErrorCode;
-import com.OBE.workflow.feature.course_section.enrollment.Enrollment;
+import com.OBE.workflow.feature.course_section.CourseSection;
+import com.OBE.workflow.feature.course_section.CourseSectionRepository;
+import com.OBE.workflow.feature.course_section.CourseSectionSpecification;
 import com.OBE.workflow.feature.course_section.enrollment.EnrollmentRepository;
+import com.OBE.workflow.feature.course_section.enrollment.EnrollmentRequest;
+import com.OBE.workflow.feature.course_section.enrollment.EnrollmentResponse;
 import com.OBE.workflow.feature.course_section.enrollment.EnrollmentService;
 import com.OBE.workflow.feature.course_section.grade.GradeRequest;
+import com.OBE.workflow.feature.course_section.grade.GradeResponse;
+import com.OBE.workflow.feature.course_section.reponse.CourseSectionGradeResponse;
 import com.OBE.workflow.feature.course_section.reponse.CourseSectionResponse;
-import com.OBE.workflow.feature.course_section.reponse.CourseSectionResponseDetail;
 import com.OBE.workflow.feature.course_section.request.CourseSectionCreateRequest;
 import com.OBE.workflow.feature.course_section.request.CourseSectionFilterRequest;
 import com.OBE.workflow.feature.course_section.request.CourseSectionUpdateRequest;
+import com.OBE.workflow.feature.course_section.section_assessment.SectionAssessmentRepository;
+import com.OBE.workflow.feature.course_section.section_assessment.SectionAssessmentService;
 import com.OBE.workflow.feature.course_version.CourseVersion;
 import com.OBE.workflow.feature.course_version.CourseVersionRepository;
 import com.OBE.workflow.feature.lecturer.Lecturer;
@@ -24,8 +32,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -37,6 +43,10 @@ public class CourseSectionService {
     private final EnrollmentRepository enrollmentRepository;
     private final LecturerRepository lecturerRepository;
     private final EnrollmentService enrollmentService;
+    private final SectionAssessmentRepository assessmentRepository;
+
+    // 1. Tiêm SectionAssessmentService vào để xử lý điểm và khung điểm
+    private final SectionAssessmentService sectionAssessmentService;
 
     @Transactional(readOnly = true)
     public Page<CourseSectionResponse> getCourseSections(Pageable pageable, CourseSectionFilterRequest filter) {
@@ -45,43 +55,29 @@ public class CourseSectionService {
         return entityPage.map(CourseSectionResponse::fromEntity);
     }
 
-    /**
-     * Lấy chi tiết một lớp học phần theo ID
-     * Bao gồm: Thông tin học phần, Giảng viên, Học kỳ, Cấu hình điểm và Danh sách sinh viên
-     */
     @Transactional(readOnly = true)
-    public CourseSectionResponseDetail getCourseSectionDetail(String id) {
-        // 1. Tìm Entity, ném lỗi nếu không tồn tại
+    public CourseSectionGradeResponse getCourseGradeResponse(String id) {
         CourseSection courseSection = courseSectionRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND,
                         "Không tìm thấy lớp học phần với mã: " + id));
-
-        // 2. Chuyển đổi sang DTO
-        // Hàm fromEntity bạn đã viết trong CourseSectionResponse đã xử lý map
-        // cả AssessmentResponses và EnrollmentResponses (kèm điểm số sinh viên).
-        return CourseSectionResponseDetail.fromEntity(courseSection);
+        return CourseSectionGradeResponse.fromEntity(courseSection);
     }
 
     @Transactional
     public CourseSectionResponse createCourseSection(CourseSectionCreateRequest request) {
-        // 1. Kiểm tra trùng mã lớp
         if (courseSectionRepository.existsById(request.getId())) {
             throw new AppException(ErrorCode.ENTITY_EXISTED, "Lớp học phần " + request.getId() + " đã tồn tại");
         }
 
-        // 2. Tìm hoặc tạo Semester (Học kỳ)
         Semester semester = semesterRepository.findByTermAndAcademicYear(request.getSemesterTerm(), request.getSemesterAcademicYear())
                 .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND, "Không tìm thấy học kỳ yêu cầu"));
 
-        // 3. Tìm CourseVersion (Khóa phức hợp: ma_hoc_phan + so_thu_tu)
         CourseVersion courseVersion = courseVersionRepository.findByCourseIdAndVersionNumber(request.getCourseId(), request.getVersionNumber())
                 .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND, "Không tìm thấy phiên bản học phần"));
 
-        // 4. Tìm giảng viên
         Lecturer lecturer = lecturerRepository.findById(request.getLecturerId())
                 .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND, "Không tìm thấy giảng viên"));
 
-        // 5. Build Entity
         CourseSection courseSection = CourseSection.builder()
                 .id(request.getId())
                 .semester(semester)
@@ -89,7 +85,12 @@ public class CourseSectionService {
                 .lecturer(lecturer)
                 .build();
 
-        return CourseSectionResponse.fromEntity(courseSectionRepository.save(courseSection));
+        CourseSection savedSection = courseSectionRepository.save(courseSection);
+
+        // 2. Tự động đồng bộ khung điểm (SectionAssessment) ngay khi tạo lớp
+        sectionAssessmentService.syncWithCourseVersion(savedSection);
+
+        return CourseSectionResponse.fromEntity(savedSection);
     }
 
     @Transactional
@@ -97,7 +98,11 @@ public class CourseSectionService {
         CourseSection existingSection = courseSectionRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND, "Không tìm thấy lớp học phần"));
 
-        // Cập nhật học kỳ nếu thay đổi
+        // Kiểm tra xem có thay đổi CourseVersion không
+        boolean isVersionChanged = !existingSection.getCourseVersion().getCourse().getId().equals(request.getCourseId()) ||
+                !existingSection.getCourseVersion().getVersionNumber().equals(request.getVersionNumber());
+
+        // Cập nhật các thông tin cơ bản...
         if (!existingSection.getSemester().getTerm().equals(request.getSemesterTerm()) ||
                 !existingSection.getSemester().getAcademicYear().equals(request.getSemesterAcademicYear())) {
             Semester newSemester = semesterRepository.findByTermAndAcademicYear(request.getSemesterTerm(), request.getSemesterAcademicYear())
@@ -105,24 +110,26 @@ public class CourseSectionService {
             existingSection.setSemester(newSemester);
         }
 
-        // Cập nhật giảng viên
         if (!existingSection.getLecturer().getId().equals(request.getLecturerId())) {
             Lecturer newLecturer = lecturerRepository.findById(request.getLecturerId())
                     .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND, "Giảng viên mới không tồn tại"));
             existingSection.setLecturer(newLecturer);
         }
 
-        // Cập nhật phiên bản học phần
-        if (!existingSection.getCourseVersion().getCourse().getId().equals(request.getCourseId()) ||
-                !existingSection.getCourseVersion().getVersionNumber().equals(request.getVersionNumber())) {
+        if (isVersionChanged) {
             CourseVersion newVersion = courseVersionRepository.findByCourseIdAndVersionNumber(request.getCourseId(), request.getVersionNumber())
                     .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND, "Phiên bản học phần mới không tồn tại"));
             existingSection.setCourseVersion(newVersion);
         }
 
-        existingSection.setId(request.getId());
+        CourseSection updatedSection = courseSectionRepository.save(existingSection);
 
-        return CourseSectionResponse.fromEntity(courseSectionRepository.save(existingSection));
+        // 3. Nếu phiên bản học phần thay đổi, phải đồng bộ lại khung điểm
+        if (isVersionChanged) {
+            sectionAssessmentService.syncWithCourseVersion(updatedSection);
+        }
+
+        return CourseSectionResponse.fromEntity(updatedSection);
     }
 
     @Transactional
@@ -133,56 +140,48 @@ public class CourseSectionService {
         courseSectionRepository.deleteById(id);
     }
 
-    // --- QUẢN LÝ SINH VIÊN & ĐIỂM SỐ (Bổ sung mới) ---
+    // --- QUẢN LÝ SINH VIÊN & ĐIỂM SỐ ---
 
     /**
-     * Thêm sinh viên vào lớp và tự động khởi tạo khung điểm null cho sinh viên đó.
+     * Cập nhật điểm số cho một sinh viên cụ thể trong lớp
      */
     @Transactional
-    public void addStudentToSection(String studentId, String sectionId) {
-        // 1. Thực hiện nghiệp vụ thêm sinh viên
-        enrollmentService.addStudentToSection(studentId, sectionId);
-        // 2. Tự động đồng bộ khung điểm ngay lập tức để sinh viên có đủ cột điểm theo CourseVersion
-        enrollmentService.syncGradesForSection(sectionId);
-        log.info("Đã thêm sinh viên {} vào lớp {} và khởi tạo khung điểm.", studentId, sectionId);
+    public EnrollmentResponse updateStudentGrade(EnrollmentRequest request) {
+        // Ủy quyền (delegate) việc xử lý điểm cho SectionAssessmentService
+        return sectionAssessmentService.updateGrade(request);
     }
 
-    /**
-     * Xóa sinh viên khỏi lớp (Tự động xóa sạch điểm liên quan nhờ orphanRemoval)
-     */
+    @Transactional
+    public EnrollmentResponse addStudentToSection(String studentId, String sectionId) {
+        EnrollmentResponse enrollmentResponse = enrollmentService.addStudentToSection(studentId, sectionId);
+        log.info("Đã thêm sinh viên {} vào lớp {} và sẵn sàng nhập điểm.", studentId, sectionId);
+        return enrollmentResponse;
+    }
+
     @Transactional
     public void removeStudentFromSection(String studentId, String sectionId) {
         enrollmentService.removeStudentFromSection(studentId, sectionId);
-        log.info("Đã xóa sinh viên {} khỏi lớp {}.", studentId, sectionId);
+    }
+
+    public CourseSectionResponse getCourseSection(String id) {
+        return CourseSectionResponse.fromEntity(courseSectionRepository.findById(id).orElseThrow(
+                ()-> new AppException(ErrorCode.ENTITY_NOT_FOUND, "Không tìm thấy lớp học phần vơi mã: "+ id)
+        ));
     }
 
     /**
-     * Cập nhật điểm cho một sinh viên cụ thể trong lớp.
+     * Cập nhật một đầu điểm đơn lẻ cho sinh viên (Phục vụ AG Grid Edit)
      */
     @Transactional
-    public void updateStudentGrades(String studentId, String sectionId, List<GradeRequest> grades) {
-        // Truy vấn trực tiếp từ Repo, dùng orElseThrow để bắt lỗi ngay lập tức
-        Enrollment enrollment = enrollmentRepository.findByStudentIdAndCourseSectionId(studentId, sectionId)
-                .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND, "Sinh viên chưa đăng ký lớp này"));
+    public EnrollmentResponse updateSingleStudentGrade(Long enrollmentId, Long saCode, Double score) {
+        log.info("Yêu cầu cập nhật điểm đơn lẻ: Enrollment {}, Cột {}, Điểm {}", enrollmentId, saCode, score);
 
-        // Sau khi có Entity, ta mới đẩy cho Service xử lý logic so sánh/cập nhật phức tạp
-        enrollmentService.updateGrades(enrollment, grades);
-        log.info("Cập nhật điểm thành công cho SV: {} tại lớp: {}", studentId, sectionId);
-    }
+        // Kiểm tra điểm hợp lệ (0-10) trước khi xử lý
+        if (score < 0 || score > 10) {
+            throw new AppException(ErrorCode.INVALID_INPUT, "Điểm số phải nằm trong khoảng từ 0 đến 10");
+        }
 
-    /**
-     * Đồng bộ khung điểm cho tất cả sinh viên trong lớp (Dùng khi cấu hình môn học thay đổi).
-     */
-    @Transactional
-    public void syncAllGrades(String sectionId) {
-        enrollmentService.syncGradesForSection(sectionId);
-    }
-
-    /**
-     * Kiểm tra xem có sinh viên nào bị lệch cột điểm so với cấu hình không.
-     */
-    @Transactional(readOnly = true)
-    public void validateGrades(String sectionId) {
-        enrollmentService.validateGradeConsistency(sectionId);
+        // Ủy quyền cho SectionAssessmentService xử lý logic nghiệp vụ
+        return sectionAssessmentService.updateSingleGrade(enrollmentId, saCode, score);
     }
 }

@@ -1,6 +1,7 @@
 package com.OBE.workflow.feature.course_section.grade;
 
 import com.OBE.workflow.feature.course_section.enrollment.Enrollment;
+import com.OBE.workflow.feature.course_section.section_assessment.SectionAssessment; // Import chạm trung chuyển
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,12 +14,14 @@ import lombok.*;
 @Table(
         name = "diem_so",
         indexes = {
-                @Index(name = "idx_grade_assessment", columnList = "ma_danh_gia, enrollment_id")
+                // Chỉ mục index theo trạm trung chuyển để truy vấn bảng điểm nhanh hơn
+                @Index(name = "idx_grade_section_assessment", columnList = "section_assessment_id, enrollment_id")
         },
         uniqueConstraints = {
+                // Đảm bảo mỗi sinh viên trong một lớp chỉ có duy nhất một đầu điểm cho mỗi bài đánh giá
                 @UniqueConstraint(
-                        name = "uq_grade_enrollment_assessment",
-                        columnNames = {"enrollment_id", "ma_danh_gia"}
+                        name = "uq_grade_enrollment_section_assessment",
+                        columnNames = {"enrollment_id", "section_assessment_id"}
                 )
         }
 )
@@ -31,8 +34,10 @@ public class Grade {
     @JoinColumn(name = "enrollment_id", nullable = false)
     private Enrollment enrollment;
 
-    @Column(name = "ma_danh_gia", nullable = false)
-    private String assessmentCode; // Lưu mã như: GK, CK, BT1...
+    // KẾT NỐI VỚI CHẠM TRUNG CHUYỂN TẠI ĐÂY:
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "section_assessment_id", nullable = false)
+    private SectionAssessment sectionAssessment;
 
     @Column(name = "diem_so")
     private Double score;

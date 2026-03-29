@@ -85,6 +85,7 @@ public class CourseVersionService {
 
     @Transactional
     public CourseVersionResponseDetail createFirstCourseVersionDetail(CourseVersionRequestCreateFirstDetail request) {
+        request.validateInvariants();
         if (courseRepository.existsById(request.getCourseId())) {
             throw(new AppException(ErrorCode.ENTITY_EXISTED, "Học phần đã tồn tại với mã: "+ request.getCourseId()));
         }
@@ -183,6 +184,7 @@ public class CourseVersionService {
     @Transactional
     public CourseVersionResponseDetail createNextCourseVersionDetail(CourseVersionRequestCreateDetail request) {
         // 1. Kiểm tra Course gốc có tồn tại không
+        request.validateInvariants();
         Course course = courseRepository.findById(request.getCourseId())
                 .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND, "Học phần không tồn tại: " + request.getCourseId()));
 
@@ -252,6 +254,7 @@ public class CourseVersionService {
     @Transactional
     public CourseVersionResponseDetail updateCourseVersionDetail(CourseVersionRequestUpdateDetail request) {
         // 1. Tìm phiên bản hiện tại (Dùng khóa hỗn hợp CourseId + VersionNumber)
+        request.validateInvariants();
         CourseVersionId id = new CourseVersionId(request.getCourseId(), request.getVersionNumber());
         CourseVersion version = courseVersionRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND, "Không tìm thấy phiên bản học phần để cập nhật"));
@@ -262,9 +265,32 @@ public class CourseVersionService {
         version.setFromDate(request.getFromDate());
         version.setToDate(request.getToDate());
 
-        List<CO> cos = version.getCos();
-        // --- KHU VỰC XỬ LÝ CO ---
 
+        // --- KHU VỰC XỬ LÝ CO ---
+        List<CO> cos = version.getCos();
+        // --- BƯỚC TIỀN XỬ LÝ CO THÔNG MINH ---
+        Set<Long> assignedCoIds = new HashSet<>();
+
+        // Bước A: Thu thập các ID CO mà Frontend đã gửi lên rõ ràng
+        for (var coReq : request.getCos()) {
+            if (coReq.getId() != null) {
+                assignedCoIds.add(coReq.getId());
+            }
+        }
+
+        // Bước B: Với các CO không có ID, tìm trong DB xem có Code nào khớp mà chưa bị gán không
+        for (var coReq : request.getCos()) {
+            if (coReq.getId() == null) {
+                version.getCos().stream()
+                        .filter(co -> co.getCoCode().equalsIgnoreCase(coReq.getCoCode()))
+                        .filter(co -> !assignedCoIds.contains(co.getId()))
+                        .findFirst()
+                        .ifPresent(existing -> {
+                            coReq.setId(existing.getId());
+                            assignedCoIds.add(existing.getId());
+                        });
+            }
+        }
         // 1. Xác định danh sách ID từ request và danh sách cần xóa
         Set<Long> reqCoIds = request.getCos().stream()
                 .map(CourseVersionRequestUpdateDetail.CoRequest::getId)
@@ -334,9 +360,33 @@ public class CourseVersionService {
                 }
             }
         }
-// Kết thúc khu vực CO, tiếp tục đến khu vực CLO...
 
+        // Kết thúc khu vực CO, tiếp tục đến khu vực CLO...
         List<CLO> clos = version.getClos();
+
+        // --- BƯỚC TIỀN XỬ LÝ CLO THÔNG MINH ---
+        Set<Long> assignedCloIds = new HashSet<>();
+
+        // Bước A: Thu thập các ID CLO có sẵn
+        for (var cloReq : request.getClos()) {
+            if (cloReq.getId() != null) {
+                assignedCloIds.add(cloReq.getId());
+            }
+        }
+
+        // Bước B: "Cứu" ID cho các CLO bị thiếu ID dựa trên cloCode
+        for (var cloReq : request.getClos()) {
+            if (cloReq.getId() == null) {
+                version.getClos().stream()
+                        .filter(clo -> clo.getCloCode().equalsIgnoreCase(cloReq.getCloCode()))
+                        .filter(clo -> !assignedCloIds.contains(clo.getId()))
+                        .findFirst()
+                        .ifPresent(existing -> {
+                            cloReq.setId(existing.getId());
+                            assignedCloIds.add(existing.getId());
+                        });
+            }
+        }
 
         // Lấy danh sách ID hợp lệ (lọc null luôn)
         // 1. Lấy danh sách ID từ request (loại bỏ null)
@@ -425,10 +475,8 @@ public class CourseVersionService {
                 }
             }
         }
-
-        List<Assessment> assessments = version.getAssessments();
         // --- KHU VỰC XỬ LÝ ASSESSMENT ---
-
+        List<Assessment> assessments = version.getAssessments();
         // --- BƯỚC 1: TIỀN XỬ LÝ THÔNG MINH ---
         // Tạo một Set để theo dõi các ID đã được gán/sử dụng trong request
         Set<Long> assignedIds = new HashSet<>();
@@ -443,7 +491,7 @@ public class CourseVersionService {
         for (var aReq : request.getAssessments()) {
             if (aReq.getId() == null) {
                 version.getAssessments().stream()
-                        .filter(a -> a.getAssessmentCode().equalsIgnoreCase(aReq.getAssessmentCode()))
+                        .filter(a -> a.getAssessmentCode().equals(aReq.getAssessmentCode()))
                         // QUAN TRỌNG: Chỉ chọn ID chưa bị thằng nào trong request chiếm mất
                         .filter(a -> !assignedIds.contains(a.getId()))
                         .findFirst()
@@ -487,7 +535,7 @@ public class CourseVersionService {
                         .findFirst()
                         .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND, "ID Assessment không hợp lệ"));
 
-                existing.setAssessmentCode(existing.getAssessmentCode() + "_tmp_" + asmTempSuffix);
+                existing.setAssessmentCode(-existing.getAssessmentCode());
             }
         }
         assessmentRepository.flush(); // Đẩy mã tạm xuống DB
@@ -508,11 +556,11 @@ public class CourseVersionService {
                 // Thêm mới hoàn toàn
                 // Kiểm tra trùng mã trong bộ nhớ (trường hợp user gửi 2 Assessment mới trùng code)
                 boolean isCodeDuplicate = version.getAssessments().stream()
-                        .anyMatch(a -> a.getAssessmentCode().equalsIgnoreCase(aReq.getAssessmentCode()));
+                        .anyMatch(a -> a.getAssessmentCode().equals(aReq.getAssessmentCode()));
 
                 if (isCodeDuplicate) {
                     Assessment existingByCode = version.getAssessments().stream()
-                            .filter(a -> a.getAssessmentCode().equalsIgnoreCase(aReq.getAssessmentCode()))
+                            .filter(a -> a.getAssessmentCode().equals(aReq.getAssessmentCode()))
                             .findFirst().get();
                     existingByCode.setName(aReq.getName());
                     existingByCode.setRegulation(aReq.getRegulation());
@@ -548,7 +596,7 @@ public class CourseVersionService {
 
         Map<String, CO> coMap = cos.stream().collect(Collectors.toMap(CO::getCoCode, c -> c));
         Map<String, CLO> cloMap = clos.stream().collect(Collectors.toMap(CLO::getCloCode, c -> c));
-        Map<String, Assessment> assessmentMap = assessments.stream().collect(Collectors.toMap(Assessment::getAssessmentCode, a -> a));
+        Map<Long, Assessment> assessmentMap = assessments.stream().collect(Collectors.toMap(Assessment::getAssessmentCode, a -> a));
 
         DebugUtils.logDeep(request.getCoCloMappings());
         DebugUtils.logDeep(request.getAssessmentCloMappings());

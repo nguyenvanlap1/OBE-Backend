@@ -1,8 +1,7 @@
 package com.OBE.workflow.feature.student;
 
-import com.OBE.workflow.feature.education_program.EducationProgram;
 import com.OBE.workflow.feature.student_class.StudentClass;
-import com.OBE.workflow.other_entity_repo.entity.Person;
+import com.OBE.workflow.permission.entity.Person;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
