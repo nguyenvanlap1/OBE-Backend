@@ -1,6 +1,6 @@
 package com.OBE.workflow.feature.officer;
 
-import com.OBE.workflow.permission.entity.Person;
+import com.OBE.workflow.authorization.account.person.Person;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;

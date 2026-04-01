@@ -81,4 +81,19 @@ public class SubDepartmentController {
                         .build()
         );
     }
+
+    @GetMapping("/department/{departmentId}")
+    public ResponseEntity<ApiResponse<List<SubDepartmentResponse>>> getByDepartment(@PathVariable("departmentId") String departmentId) {
+        List<SubDepartment> subDepartments = subDepartmentService.getByDepartmentId(departmentId);
+
+        // Map sang DTO để trả về
+        List<SubDepartmentResponse> responses = subDepartments.stream()
+                .map(subDepartmentMapper::toResponse)
+                .toList();
+
+        return ResponseEntity.ok(ApiResponse.<List<SubDepartmentResponse>>builder()
+                .status(HttpStatus.OK.value())
+                .data(responses)
+                .build());
+    }
 }

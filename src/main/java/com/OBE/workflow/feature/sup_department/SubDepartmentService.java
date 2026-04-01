@@ -7,13 +7,15 @@ import com.OBE.workflow.feature.department.Department;
 import com.OBE.workflow.conmon.exception.AppException;
 import com.OBE.workflow.conmon.exception.ErrorCode;
 import com.OBE.workflow.feature.department.DepartmentRepository;
-import com.OBE.workflow.permission.repository.AccountRoleSubDepartmentRepository;
+import com.OBE.workflow.authorization.account.account_role_sub_department.AccountRoleSubDepartmentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -75,5 +77,17 @@ public class SubDepartmentService {
         if(accountRoleSubDepartmentRepository.existsBySubDepartment(subDepartment))
             throw new AppException(ErrorCode.DATA_INTEGRITY_VIOLATION, "Không thể xóa khoa hoặc bộ môn do vẫn còn các các bộ trực thuộc");
         subDepartmentRepository.deleteById(id);
+    }
+
+    // --- Hàm lấy danh sách bộ môn theo mã Khoa ---
+    @Transactional(readOnly = true)
+    public List<SubDepartment> getByDepartmentId(String departmentId) {
+        // Kiểm tra xem khoa có tồn tại không (tùy chọn nhưng nên có để báo lỗi chính xác)
+        if (!departmentRepository.existsById(departmentId)) {
+            throw new AppException(ErrorCode.ENTITY_NOT_FOUND, "Không tìm thấy khoa với mã: " + departmentId);
+        }
+
+        // Gọi Repository để tìm các bộ môn thuộc khoa này
+        return subDepartmentRepository.findByDepartmentId(departmentId);
     }
 }

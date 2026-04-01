@@ -1,24 +1,23 @@
 package com.OBE.workflow.conmon.config;
 
-import com.OBE.workflow.conmon.enums.ScopeType;
 import com.OBE.workflow.feature.officer.Officer;
 import com.OBE.workflow.feature.officer.OfficerRepository;
-import com.OBE.workflow.feature.permission.PermissionRepository;
+import com.OBE.workflow.authorization.permission.PermissionRepository;
+import com.OBE.workflow.authorization.permission.enums.PermissionRegistry;
 import com.OBE.workflow.feature.sup_department.SubDepartmentRepository;
-import com.OBE.workflow.permission.account.AccountRepository;
+import com.OBE.workflow.authorization.account.AccountRepository;
 import com.OBE.workflow.feature.department.Department;
 import com.OBE.workflow.feature.department.DepartmentRepository;
-import com.OBE.workflow.permission.account.Account;
-import com.OBE.workflow.permission.entity.AccountRoleSubDepartment;
-import com.OBE.workflow.feature.permission.Permission;
-import com.OBE.workflow.permission.entity.Person;
-import com.OBE.workflow.permission.entity.Role;
+import com.OBE.workflow.authorization.account.Account;
+import com.OBE.workflow.authorization.account.account_role_sub_department.AccountRoleSubDepartment;
+import com.OBE.workflow.authorization.permission.Permission;
+import com.OBE.workflow.authorization.account.person.Person;
+import com.OBE.workflow.authorization.role.Role;
 import com.OBE.workflow.conmon.enums.SystemRoleType;
 import com.OBE.workflow.conmon.enums.SystemManagement;
-import com.OBE.workflow.feature.permission.PermissionType;
 import com.OBE.workflow.feature.sup_department.SubDepartment;
-import com.OBE.workflow.permission.repository.AccountRoleSubDepartmentRepository;
-import com.OBE.workflow.permission.repository.RoleRepository;
+import com.OBE.workflow.authorization.account.account_role_sub_department.AccountRoleSubDepartmentRepository;
+import com.OBE.workflow.authorization.role.RoleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
@@ -65,16 +64,20 @@ public class DataInitializer implements ApplicationRunner {
     }
 
     private void initialPermissions() {
-        Arrays.stream(PermissionType.values()).forEach(
-                (permissionType) -> {
-                    if(!permissionRepository.existsById(permissionType.getId())){
-                        permissionRepository.save(Permission.builder()
-                                .id(permissionType.getId())
-                                .permissionType(permissionType)
-                                .build());
+        PermissionRegistry.getAllPermissions().stream()
+                .flatMap(Arrays::stream) // Chuyển List<IPermission[]> thành Stream<IPermission>
+                .forEach(pEnum -> {
+                    // Kiểm tra nếu chưa có hoặc cần cập nhật thông tin mới nhất từ Code vào DB
+                    if (!permissionRepository.existsById(pEnum.getId())) {
+                        Permission permission = Permission.builder()
+                                .id(pEnum.getId())
+                                .name(pEnum.getName())
+                                .description(pEnum.getDescription())
+                                .allowedScopes(pEnum.getAllowedScopes())
+                                .build();
+                        permissionRepository.save(permission);
                     }
-                }
-        );
+                });
     }
 
     private void initialAdmin() {
@@ -94,10 +97,8 @@ public class DataInitializer implements ApplicationRunner {
 
         Role role = roleRepository.findById(SystemRoleType.ADMIN.name())
                 .orElseGet(() -> roleRepository.save(Role.builder()
-                        .roleId(SystemRoleType.ADMIN.name())
+                        .id(SystemRoleType.ADMIN.name())
                         .name(SystemRoleType.ADMIN.name())
-                        .subDepartment(subDepartment)
-                        .scopeType(ScopeType.TRUONG)
                         .build()));
 
         // 2. KIỂM TRA VÀ XÓA NẾU USERNAME THAY ĐỔI
