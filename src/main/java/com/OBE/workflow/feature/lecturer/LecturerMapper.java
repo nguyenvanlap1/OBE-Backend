@@ -1,7 +1,6 @@
 package com.OBE.workflow.feature.lecturer;
 
 import com.OBE.workflow.feature.lecturer.request.LecturerRequest;
-import com.OBE.workflow.feature.lecturer.response.LecturerResponse;
 import com.OBE.workflow.feature.sup_department.SubDepartment;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -13,10 +12,6 @@ import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
 public interface LecturerMapper {
-
-    // Ánh xạ từ Entity sang Response
-    @Mapping(target = "subDepartmentIds", source = "subDepartments", qualifiedByName = "mapSubDepartmentsToIds")
-    LecturerResponse toResponse(Lecturer lecturer);
 
     // Ánh xạ từ Request sang Entity
     // subDepartments sẽ được set thủ công trong Service bằng cách tìm theo IDs

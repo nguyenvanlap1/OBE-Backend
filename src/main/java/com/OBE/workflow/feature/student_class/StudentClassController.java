@@ -2,6 +2,7 @@ package com.OBE.workflow.feature.student_class;
 
 import com.OBE.workflow.conmon.dto.ApiResponse;
 import com.OBE.workflow.conmon.dto.PageResponse;
+import com.OBE.workflow.feature.education_program.EducationProgramService;
 import com.OBE.workflow.feature.student_class.request.StudentClassCreateRequest;
 import com.OBE.workflow.feature.student_class.request.StudentClassFilterRequest;
 import com.OBE.workflow.feature.student_class.request.StudentClassUpdateRequest;
@@ -12,6 +13,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -19,14 +22,17 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class StudentClassController {
 
-    private final StudentClassService studentClassesService;
+    private final StudentClassService studentClassService;
+    private final EducationProgramService educationProgramService;
 
     @PostMapping
+    @PreAuthorize("@ps.hasPermission('STUDENT_CLASS_CREATE', "
+            + "@educationProgramService.getSubDepartmentIdByProgramId(#request.educationProgramId), "
+            + "@educationProgramService.getDepartmentIdByProgramId(#request.educationProgramId))")
     public ResponseEntity<ApiResponse<StudentClassResponse>> createClass(
-            @Valid @RequestBody StudentClassCreateRequest request) {
+            @P("request") @Valid @RequestBody StudentClassCreateRequest request) {
 
-        StudentClassResponse savedClass = studentClassesService.createClass(request);
-
+        StudentClassResponse savedClass = studentClassService.createClass(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 ApiResponse.<StudentClassResponse>builder()
                         .status(HttpStatus.CREATED.value())
@@ -37,12 +43,14 @@ public class StudentClassController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@ps.hasPermission('STUDENT_CLASS_WRITE', "
+            + "@studentClassService.getSubDepartmentIdByClassId(#id), "
+            + "@studentClassService.getDepartmentIdByClassId(#id))")
     public ResponseEntity<ApiResponse<StudentClassResponse>> updateClass(
-            @PathVariable("id") String id,
+            @P("id") @PathVariable("id") String id,
             @Valid @RequestBody StudentClassUpdateRequest request) {
 
-        StudentClassResponse updatedClass = studentClassesService.updateClass(id, request);
-
+        StudentClassResponse updatedClass = studentClassService.updateClass(id, request);
         return ResponseEntity.ok(
                 ApiResponse.<StudentClassResponse>builder()
                         .status(HttpStatus.OK.value())
@@ -53,9 +61,11 @@ public class StudentClassController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteClass(@PathVariable("id") String id) {
-        studentClassesService.deleteClass(id);
-
+    @PreAuthorize("@ps.hasPermission('STUDENT_CLASS_DELETE', "
+            + "@studentClassService.getSubDepartmentIdByClassId(#id), "
+            + "@studentClassService.getDepartmentIdByClassId(#id))")
+    public ResponseEntity<ApiResponse<Void>> deleteClass(@P("id") @PathVariable("id") String id) {
+        studentClassService.deleteClass(id);
         return ResponseEntity.ok(
                 ApiResponse.<Void>builder()
                         .status(HttpStatus.OK.value())
@@ -69,9 +79,7 @@ public class StudentClassController {
             @org.springdoc.core.annotations.ParameterObject Pageable pageable,
             @RequestBody StudentClassFilterRequest filter) {
 
-        // Lấy dữ liệu phân trang từ Service (Service đã map sang Response DTO)
-        Page<StudentClassResponse> pageResponse = studentClassesService.getStudentClasses(pageable, filter);
-
+        Page<StudentClassResponse> pageResponse = studentClassService.getStudentClasses(pageable, filter);
         return ResponseEntity.ok(
                 ApiResponse.<PageResponse<StudentClassResponse, StudentClassResponse>>builder()
                         .status(HttpStatus.OK.value())

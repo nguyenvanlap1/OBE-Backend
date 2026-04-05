@@ -109,4 +109,36 @@ public class StudentClassService {
         // 3. Thực hiện xóa
         studentClassRepository.delete(entity);
     }
+
+    // --- Các phương thức hỗ trợ phân quyền ---
+
+    /**
+     * Lấy ID của Bộ môn (SubDepartment) quản lý lớp học này thông qua CTĐT
+     */
+    @Transactional(readOnly = true)
+    public String getSubDepartmentIdByClassId(String classId) {
+        StudentClass entity = studentClassRepository.findById(classId)
+                .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND,
+                        "Không tìm thấy lớp học với mã: " + classId));
+
+        return entity.getEducationProgram().getSubDepartment().getId();
+    }
+
+    /**
+     * Lấy ID của Khoa (Department) quản lý lớp học này thông qua CTĐT và Bộ môn
+     */
+    @Transactional(readOnly = true)
+    public String getDepartmentIdByClassId(String classId) {
+        StudentClass entity = studentClassRepository.findById(classId)
+                .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND,
+                        "Không tìm thấy lớp học với mã: " + classId));
+
+        // Truy xuất bắc cầu: Class -> EducationProgram -> SubDepartment -> Department
+        if (entity.getEducationProgram().getSubDepartment().getDepartment() == null) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION,
+                    "Dữ liệu đơn vị (Khoa) của lớp học này không hợp lệ.");
+        }
+
+        return entity.getEducationProgram().getSubDepartment().getDepartment().getId();
+    }
 }

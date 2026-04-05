@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -26,10 +27,7 @@ public class LecturerController {
             Pageable pageable,
             LecturerFilterRequest filter) {
 
-        Page<Lecturer> lecturerPage = lecturerService.getLecturers(pageable, filter);
-
-        // Map Page<Entity> sang Page<Response> (đã có xử lý chuyển đổi IDs trong Mapper)
-        Page<LecturerResponse> responsePage = lecturerPage.map(lecturerMapper::toResponse);
+        Page<LecturerResponse> responsePage = lecturerService.getLecturers(pageable, filter);
 
         return ResponseEntity.ok(
                 ApiResponse.<Page<LecturerResponse>>builder()
@@ -41,35 +39,39 @@ public class LecturerController {
     }
 
     @PostMapping
+    @PreAuthorize("@ps.hasPermission('LECTURER_CREATE', null, null)")
     public ResponseEntity<ApiResponse<LecturerResponse>> createLecturer(@Valid @RequestBody LecturerRequest request) {
-        Lecturer savedLecturer = lecturerService.createLecturer(request);
+        LecturerResponse lecturerResponse = lecturerService.createLecturer(request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 ApiResponse.<LecturerResponse>builder()
                         .status(HttpStatus.CREATED.value())
                         .message("Đã tạo giảng viên mới thành công")
-                        .data(lecturerMapper.toResponse(savedLecturer))
+                        .data(lecturerResponse)
                         .build()
         );
     }
 
+    // --- Cập nhật ---
     @PutMapping("/{id}")
+    @PreAuthorize("@ps.hasPermission('LECTURER_WRITE', null, null)")
     public ResponseEntity<ApiResponse<LecturerResponse>> updateLecturer(
             @PathVariable("id") String id,
             @Valid @RequestBody LecturerRequest request) {
 
-        Lecturer updatedLecturer = lecturerService.updateLecturer(id, request);
+        LecturerResponse lecturerResponse = lecturerService.updateLecturer(id, request);
 
         return ResponseEntity.ok(
                 ApiResponse.<LecturerResponse>builder()
                         .status(HttpStatus.OK.value())
                         .message("Cập nhật thông tin giảng viên thành công")
-                        .data(lecturerMapper.toResponse(updatedLecturer))
+                        .data(lecturerResponse)
                         .build()
         );
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("@ps.hasPermission('LECTURER_DELETE', null, null)")
     public ResponseEntity<ApiResponse<Void>> deleteLecturer(@PathVariable("id") String id) {
         lecturerService.deleteLecturer(id);
         return ResponseEntity.ok(

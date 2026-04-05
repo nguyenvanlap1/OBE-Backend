@@ -2,12 +2,13 @@ package com.OBE.workflow.feature.lecturer;
 
 import com.OBE.workflow.conmon.exception.AppException;
 import com.OBE.workflow.conmon.exception.ErrorCode;
-import com.OBE.workflow.authorization.account.AccountRepository;
+import com.OBE.workflow.conmon.authorization.account.AccountRepository;
 import com.OBE.workflow.feature.lecturer.request.LecturerFilterRequest;
 import com.OBE.workflow.feature.lecturer.request.LecturerRequest;
+import com.OBE.workflow.feature.lecturer.response.LecturerResponse;
 import com.OBE.workflow.feature.sup_department.SubDepartment;
 import com.OBE.workflow.feature.sup_department.SubDepartmentRepository;
-import com.OBE.workflow.authorization.account.person.PersonRepository;
+import com.OBE.workflow.conmon.authorization.account.person.PersonRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -34,18 +35,24 @@ public class LecturerService {
     private String systemAdminUser;
 
     @Transactional(readOnly = true)
-    public Page<Lecturer> getLecturers(Pageable pageable, LecturerFilterRequest filter) {
+    public Page<LecturerResponse> getLecturers(Pageable pageable, LecturerFilterRequest filter) {
+        // 1. Xây dựng Specification dựa trên filter
         Specification<Lecturer> spec = Specification
                 .where(LecturerSpecification.hasId(filter.getId()))
                 .and(LecturerSpecification.hasFullName(filter.getFullName()))
                 .and(LecturerSpecification.hasGender(filter.getGender()))
-                .and(LecturerSpecification.hasSubDepartmentId(filter.getSubDepartmentId()));
+                .and(LecturerSpecification.hasSubDepartmentId(filter.getSubDepartmentIds()));
 
-        return lecturerRepository.findAll(spec, pageable);
+        // 2. Truy vấn lấy Page các Entity từ Database
+        Page<Lecturer> lecturerPage = lecturerRepository.findAll(spec, pageable);
+
+        // 3. Chuyển đổi Page<Entity> sang Page<DTO> bằng phương thức map
+        // Sử dụng Method Reference để code ngắn gọn và chuyên nghiệp
+        return lecturerPage.map(LecturerResponse::fromEntity);
     }
 
     @Transactional
-    public Lecturer createLecturer(LecturerRequest request) {
+    public LecturerResponse createLecturer(LecturerRequest request) {
         if (personRepository.existsById(request.getId())
                 || systemAdminUser.equals(request.getId())) {
             throw new AppException(ErrorCode.USER_EXISTED, "Mã giảng viên đã tồn tại hoặc trùng với admin hệ thống");
@@ -56,11 +63,11 @@ public class LecturerService {
         // Xử lý gán danh sách bộ môn
         setSubDepartments(lecturer, request.getSubDepartmentIds());
 
-        return lecturerRepository.save(lecturer);
+        return LecturerResponse.fromEntity(lecturerRepository.save(lecturer));
     }
 
     @Transactional
-    public Lecturer updateLecturer(String id, LecturerRequest request) {
+    public LecturerResponse updateLecturer(String id, LecturerRequest request) {
         Lecturer lecturer = lecturerRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND, "Không tìm thấy giảng viên để cập nhật"));
 
@@ -69,7 +76,7 @@ public class LecturerService {
         // Cập nhật lại danh sách bộ môn
         setSubDepartments(lecturer, request.getSubDepartmentIds());
 
-        return lecturerRepository.save(lecturer);
+        return LecturerResponse.fromEntity(lecturerRepository.save(lecturer));
     }
 
     private void setSubDepartments(Lecturer lecturer, Set<String> subDepartmentIds) {

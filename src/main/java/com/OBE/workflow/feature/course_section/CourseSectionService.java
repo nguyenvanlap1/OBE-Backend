@@ -173,7 +173,7 @@ public class CourseSectionService {
      * Cập nhật một đầu điểm đơn lẻ cho sinh viên (Phục vụ AG Grid Edit)
      */
     @Transactional
-    public EnrollmentResponse updateSingleStudentGrade(Long enrollmentId, Long saCode, Double score) {
+    public EnrollmentResponse updateSingleStudentGrade(String sectionId, Long enrollmentId, Long saCode, Double score) {
         log.info("Yêu cầu cập nhật điểm đơn lẻ: Enrollment {}, Cột {}, Điểm {}", enrollmentId, saCode, score);
 
         // Kiểm tra điểm hợp lệ (0-10) trước khi xử lý
@@ -182,6 +182,28 @@ public class CourseSectionService {
         }
 
         // Ủy quyền cho SectionAssessmentService xử lý logic nghiệp vụ
-        return sectionAssessmentService.updateSingleGrade(enrollmentId, saCode, score);
+        return sectionAssessmentService.updateSingleGrade(sectionId, enrollmentId, saCode, score);
+    }
+
+    /**
+     * Lấy ID Bộ môn quản lý lớp học phần này
+     */
+    @Transactional(readOnly = true)
+    public String getSubDepartmentIdBySection(String id) {
+        return courseSectionRepository.findById(id)
+                .map(section -> section.getCourseVersion().getCourse().getSubDepartment().getId())
+                .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND,
+                        "Không tìm thấy thông tin Bộ môn cho lớp học phần: " + id));
+    }
+
+    /**
+     * Lấy ID Khoa quản lý lớp học phần này
+     */
+    @Transactional(readOnly = true)
+    public String getDepartmentIdBySection(String id) {
+        return courseSectionRepository.findById(id)
+                .map(section -> section.getCourseVersion().getCourse().getSubDepartment().getDepartment().getId())
+                .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND,
+                        "Không tìm thấy thông tin Khoa cho lớp học phần: " + id));
     }
 }

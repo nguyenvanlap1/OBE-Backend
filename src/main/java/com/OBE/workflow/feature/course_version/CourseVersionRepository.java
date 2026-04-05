@@ -38,4 +38,6 @@ public interface CourseVersionRepository
     Optional<CourseVersion> findFirstByCourseIdOrderByVersionNumberDesc(String courseId);
 
     boolean existsByCourseIdAndVersionNumberNot(String courseId, Integer versionNumber);
+
+    Optional<CourseVersion> findFirstByCourseId(String courseId);
 }

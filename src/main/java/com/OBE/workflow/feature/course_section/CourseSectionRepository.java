@@ -6,4 +6,5 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import java.util.Optional;
 
 public interface CourseSectionRepository extends JpaRepository<CourseSection, String>, JpaSpecificationExecutor<CourseSection> {
+    boolean existsBySemesterId(Long id);
 }

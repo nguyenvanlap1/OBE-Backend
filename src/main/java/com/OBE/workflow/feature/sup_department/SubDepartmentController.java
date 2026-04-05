@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,7 +24,8 @@ public class SubDepartmentController {
     private final SubDepartmentMapper subDepartmentMapper;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<SubDepartmentResponse>> createSubDepartment(@Valid @RequestBody SubDepartmentRequest request) {
+    @PreAuthorize("@ps.hasPermission('SUBDEPT_CREATE', null, #request.departmentId)")
+    public ResponseEntity<ApiResponse<SubDepartmentResponse>> createSubDepartment(@P("request") @Valid @RequestBody SubDepartmentRequest request) {
         SubDepartment savedSubDepartment = subDepartmentService.createSubDepartment(request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.<SubDepartmentResponse>builder()
@@ -33,9 +36,10 @@ public class SubDepartmentController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@ps.hasPermission('SUBDEPT_WRITE', #id, #request.departmentId)")
     public ResponseEntity<ApiResponse<SubDepartmentResponse>> updateSubDepartment(
-            @PathVariable("id") String id,
-            @Valid @RequestBody SubDepartmentRequest request) {
+            @P("id") @PathVariable("id") String id,
+            @P("request") @Valid @RequestBody SubDepartmentRequest request) {
 
         SubDepartment updatedSubDepartment = subDepartmentService.updateSubDepartment(id, request);
 
@@ -49,7 +53,8 @@ public class SubDepartmentController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteSubDepartment(@PathVariable("id") String id) {
+    @PreAuthorize("@ps.hasPermission('SUBDEPT_DELETE', #id, @subDepartmentService.getDepartmentIdBySubDepartmentId(#id))")
+    public ResponseEntity<ApiResponse<Void>> deleteSubDepartment(@P("id") @PathVariable("id") String id) {
         subDepartmentService.deleteSubDepartment(id);
         return ResponseEntity.ok(
                 ApiResponse.<Void>builder()

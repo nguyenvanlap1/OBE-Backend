@@ -7,7 +7,7 @@ import com.OBE.workflow.feature.department.Department;
 import com.OBE.workflow.conmon.exception.AppException;
 import com.OBE.workflow.conmon.exception.ErrorCode;
 import com.OBE.workflow.feature.department.DepartmentRepository;
-import com.OBE.workflow.authorization.account.account_role_sub_department.AccountRoleSubDepartmentRepository;
+import com.OBE.workflow.conmon.authorization.account.account_role_sub_department.AccountRoleSubDepartmentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -89,5 +89,13 @@ public class SubDepartmentService {
 
         // Gọi Repository để tìm các bộ môn thuộc khoa này
         return subDepartmentRepository.findByDepartmentId(departmentId);
+    }
+
+    @Transactional(readOnly = true)
+    public String getDepartmentIdBySubDepartmentId(String subDeptId) {
+        return subDepartmentRepository.findById(subDeptId)
+                .map(sub -> sub.getDepartment().getId())
+                .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND,
+                        "Không tìm thấy bộ môn với mã: " + subDeptId));
     }
 }

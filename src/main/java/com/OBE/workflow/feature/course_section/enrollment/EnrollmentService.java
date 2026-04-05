@@ -46,4 +46,21 @@ public class EnrollmentService {
                 .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND, "Không tìm thấy bản ghi đăng ký"));
         enrollmentRepository.delete(enrollment);
     }
+
+    @Transactional(readOnly = true)
+    public String getSubDepartmentIdByEnrollment(String studentId, String sectionId) {
+        return enrollmentRepository.findByStudentIdAndCourseSectionId(studentId, sectionId)
+                .map(enrollment -> enrollment.getCourseSection().getCourseVersion().getCourse().getSubDepartment().getId())
+                .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND, "Không tìm thấy bản ghi đăng ký"));
+    }
+
+    /**
+     * Lấy ID Khoa quản lý dựa trên cặp StudentId và SectionId
+     */
+    @Transactional(readOnly = true)
+    public String getDepartmentIdByEnrollment(String studentId, String sectionId) {
+        return enrollmentRepository.findByStudentIdAndCourseSectionId(studentId, sectionId)
+                .map(enrollment -> enrollment.getCourseSection().getCourseVersion().getCourse().getSubDepartment().getDepartment().getId())
+                .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND, "Không tìm thấy bản ghi đăng ký"));
+    }
 }

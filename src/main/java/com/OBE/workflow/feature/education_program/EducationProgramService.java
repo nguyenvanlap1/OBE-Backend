@@ -75,7 +75,7 @@ public class EducationProgramService {
         // 3. Sử dụng Mapper để tổng hợp thành ResponseDetail
         EducationProgramResponseDetail educationProgramResponseDetail =  educationProgramMapper.toDetailResponse(program, mappings);
         educationProgramResponseDetail.setSchoolYearIds(program.getSchoolYears().stream().map(SchoolYear::getId).toList());
-        return educationProgramMapper.toDetailResponse(program, mappings);
+        return educationProgramResponseDetail;
     }
 
     @Transactional
@@ -164,7 +164,23 @@ public class EducationProgramService {
         List<PLO> plos = updatePlos(educationProgram, request.getPlos());
         plos = ploRepository.saveAll(plos);
         List<PloPoMapping> ploPoMappings = updateMapping(savedProgram, request.getPloPoMappings(), pos, plos);
-        return educationProgramMapper.toDetailResponse(savedProgram, ploPoMappings);
+        EducationProgramResponseDetail educationProgramResponseDetail = educationProgramMapper.toDetailResponse(savedProgram, ploPoMappings);
+        educationProgramResponseDetail.setSchoolYearIds(savedProgram.getSchoolYears().stream().map(SchoolYear::getId).toList());
+        educationProgramResponseDetail.setPos(pos.stream()
+                .map(p -> EducationProgramResponseDetail.PoResponse.builder()
+                        .id(p.getId())
+                        .poCode(p.getPoCode())
+                        .content(p.getContent())
+                        .build())
+                .toList());
+        educationProgramResponseDetail.setPlos(plos.stream()
+                .map(p -> EducationProgramResponseDetail.PloResponse.builder()
+                        .id(p.getId())
+                        .ploCode(p.getPloCode())
+                        .content(p.getContent())
+                        .build())
+                .toList());
+        return educationProgramResponseDetail;
     }
 
     @Transactional
@@ -193,7 +209,9 @@ public class EducationProgramService {
 
         List<PloPoMapping> newMapping =  updateMapping(updatedProgram, request.getPloPoMappings(), newPos, newPlos);
         // 4. Trả về kết quả (Hiện tại List mappings truyền vào đang để trống vì chưa xử lý con)
-        return educationProgramMapper.toDetailResponse(updatedProgram, newMapping);
+        EducationProgramResponseDetail educationProgramResponseDetail =  educationProgramMapper.toDetailResponse(updatedProgram, newMapping);
+        educationProgramResponseDetail.setSchoolYearIds(updatedProgram.getSchoolYears().stream().map(SchoolYear::getId).toList());
+        return educationProgramResponseDetail;
     }
 
     private List<PO> updatePos(EducationProgram program, List<EducationProgramRequestUpdateDetail.PoRequest> poRequests) {
@@ -425,5 +443,37 @@ public class EducationProgramService {
 
         // 2. Lưu batch tất cả mapping mới
         return ploPoMappingRepository.saveAll(newMappings);
+    }
+
+    /**
+     * Lấy ID của Bộ môn (SubDepartment) quản lý Chương trình đào tạo
+     */
+    @Transactional(readOnly = true)
+    public String getSubDepartmentIdByProgramId(String programId) {
+        EducationProgram program = educationProgramRepository.findById(programId)
+                .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND,
+                        "Không tìm thấy chương trình đào tạo mã: " + programId));
+
+        // Truy xuất ID từ quan hệ @ManyToOne với SubDepartment
+        return program.getSubDepartment().getId();
+    }
+
+    /**
+     * Lấy ID của Khoa (Department) quản lý Bộ môn của Chương trình đào tạo này
+     */
+    @Transactional(readOnly = true)
+    public String getDepartmentIdByProgramId(String programId) {
+        EducationProgram program = educationProgramRepository.findById(programId)
+                .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND,
+                        "Không tìm thấy chương trình đào tạo mã: " + programId));
+
+        // Truy xuất từ CTĐT -> Bộ môn -> Khoa
+        // Giả định SubDepartment có quan hệ @ManyToOne với Department
+        if (program.getSubDepartment().getDepartment() == null) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION,
+                    "Bộ môn này chưa được gán vào Khoa nào.");
+        }
+
+        return program.getSubDepartment().getDepartment().getId();
     }
 }

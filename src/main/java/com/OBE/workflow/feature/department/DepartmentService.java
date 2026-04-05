@@ -2,6 +2,7 @@ package com.OBE.workflow.feature.department;
 
 import com.OBE.workflow.conmon.exception.AppException;
 import com.OBE.workflow.conmon.exception.ErrorCode;
+import com.OBE.workflow.feature.department.response.DepartmentSummaryResponse;
 import com.OBE.workflow.feature.sup_department.SubDepartmentRepository;
 import com.OBE.workflow.feature.department.request.DepartmentFilterRequest;
 import com.OBE.workflow.feature.department.request.DepartmentRequest;
@@ -11,6 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -65,5 +68,12 @@ public class DepartmentService {
             throw new AppException(ErrorCode.DATA_INTEGRITY_VIOLATION, "Không thể xóa: Khoa vẫn còn các bộ môn trực thuộc");
         }
         departmentRepository.deleteById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public List<DepartmentSummaryResponse> getAllSummaries() {
+        return departmentRepository.findAll().stream()
+                .map(DepartmentSummaryResponse::fromEntity)
+                .toList();
     }
 }

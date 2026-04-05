@@ -1,5 +1,6 @@
 package com.OBE.workflow.conmon.config;
 
+import com.OBE.workflow.conmon.authentication.SecurityService;
 import com.OBE.workflow.conmon.enums.SystemRoleType;
 import jakarta.servlet.http.Cookie;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,6 +8,7 @@ import org.springframework.http.HttpMethod;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,7 +30,11 @@ import java.util.List;
 @Slf4j
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
+
+    @Autowired
+    private SecurityService securityService; // Thêm dòng này cạnh JwtUtils
 
     @Autowired
     private JwtUtils jwtUtils;
@@ -50,7 +56,7 @@ public class SecurityConfig {
                                 "/swagger-resources/**",
                                 "/webjars/**"
                         ).permitAll()
-                        .requestMatchers("/api/login").permitAll()
+                        .requestMatchers("/api/login", "/api/logout").permitAll()
                         .requestMatchers("/api/admin/**").hasRole(SystemRoleType.ADMIN.name())
                         .requestMatchers("/camunda/**", "/lib/**", "/api/engine/**").permitAll()
                         .anyRequest().authenticated()
@@ -76,17 +82,33 @@ public class SecurityConfig {
                 );
 
         // Thêm filter và xử lý Exception bằng try-catch
+        // Tìm đến đoạn .addFilterAfter và thay thế bằng nội dung này:
         http.addFilterAfter((request, response, chain) -> {
-            try {
-                var auth = SecurityContextHolder.getContext().getAuthentication();
-                if (auth != null) {
-                    log.info(">>>> [SECURITY LOG] User: {} | Authorities: {}", auth.getName(), auth.getAuthorities());
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+
+            if (auth != null && auth.isAuthenticated()) {
+                String username = auth.getName();
+
+                // KIỂM TRA BLACKLIST TẠI ĐÂY
+                if (securityService.isUserBlacklisted(username)) {
+                    log.warn(">>>> [SECURITY] User {} is blacklisted! Forcing logout.", username);
+
+                    // 1. Xóa cookie ở trình duyệt
+                    securityService.clearAccessTokenCookie((jakarta.servlet.http.HttpServletResponse) response);
+
+                    // 2. Trả về lỗi 401
+                    var httpResponse = (jakarta.servlet.http.HttpServletResponse) response;
+                    httpResponse.setContentType("application/json;charset=UTF-8");
+                    httpResponse.setStatus(401);
+                    httpResponse.getWriter().write(
+                            "{\"status\": 401, \"message\": \"Tài khoản đã bị đăng xuất cưỡng bức bởi Admin\"}"
+                    );
+                    return; // Ngắt xích, không cho đi tiếp vào Controller
                 }
-                chain.doFilter(request, response);
-            } catch (Exception e) {
-                log.error("Filter error: {}", e.getMessage());
-                throw new RuntimeException(e); // Ép về RuntimeException để đúng chuẩn Lambda
+
+                log.info(">>>> [SECURITY LOG] User: {} | Authorities: {}", username, auth.getAuthorities());
             }
+            chain.doFilter(request, response);
         }, BasicAuthenticationFilter.class);
 
         return http.build();

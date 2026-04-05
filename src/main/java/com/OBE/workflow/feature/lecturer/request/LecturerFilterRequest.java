@@ -10,5 +10,5 @@ public class LecturerFilterRequest {
     private String fullName;
     private String gender;
     // Thêm trường này để lọc giảng viên theo bộ môn
-    private String subDepartmentId;
+    private String subDepartmentIds;
 }

@@ -30,7 +30,6 @@ public class SubDepartment {
     private String description;
 
     // 5. Relationships
-    @NonNull
     @ManyToOne
     @JoinColumn(name = "ma_khoa", nullable = false) // Khóa ngoại trỏ đến thực thể Department
     private Department department;

@@ -693,4 +693,24 @@ public class CourseVersionService {
             courseRepository.deleteById(courseId);
         }
     }
+
+    @Transactional(readOnly = true)
+    public String getSubDepartmentIdByCourse(String courseId) {
+        // Tìm bản ghi đầu tiên của học phần này để truy xuất SubDepartment
+        return courseVersionRepository.findFirstByCourseId(courseId)
+                .map(version -> version.getCourse().getSubDepartment().getId())
+                .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND,
+                        "Không tìm thấy dữ liệu bộ môn cho học phần: " + courseId));
+    }
+
+
+    @Transactional(readOnly = true)
+    public String getDepartmentIdByCourse(String courseId) {
+        // Tìm Course trước để truy xuất ngược lên Department
+        // Giả sử bạn có CourseRepository hoặc lấy thông qua CourseVersionRepository
+        return courseVersionRepository.findFirstByCourseId(courseId)
+                .map(version -> version.getCourse().getSubDepartment().getDepartment().getId())
+                .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND,
+                        "Không tìm thấy dữ liệu khoa cho học phần: " + courseId));
+    }
 }

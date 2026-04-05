@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,6 +20,7 @@ public class SemesterController {
     private final SemesterService semesterService;
 
     @PostMapping
+    @PreAuthorize("@ps.hasPermission('SEMESTER_CREATE', null, null)")
     public ResponseEntity<ApiResponse<SemesterResponse>> createSemester(@Valid @RequestBody SemesterRequest request) {
         Semester savedSemester = semesterService.createSemester(request);
 
@@ -32,6 +34,7 @@ public class SemesterController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@ps.hasPermission('SEMESTER_UPDATE', null, null)")
     public ResponseEntity<ApiResponse<SemesterResponse>> updateSemester(
             @PathVariable("id") Long id,
             @Valid @RequestBody SemesterRequest request) {
@@ -48,6 +51,7 @@ public class SemesterController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("@ps.hasPermission('SEMESTER_DELETE', null, null)")
     public ResponseEntity<ApiResponse<Void>> deleteSemester(@PathVariable("id") Long id) {
         semesterService.deleteSemester(id);
         return ResponseEntity.ok(

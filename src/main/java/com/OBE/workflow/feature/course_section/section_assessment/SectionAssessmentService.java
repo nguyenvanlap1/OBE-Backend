@@ -151,10 +151,16 @@ public class SectionAssessmentService {
     }
 
     @Transactional
-    public EnrollmentResponse updateSingleGrade(Long enrollmentId, Long saCode, Double score) {
+    public EnrollmentResponse updateSingleGrade(String sectionId, Long enrollmentId, Long saCode, Double score) {
         // 1. Tìm Enrollment (Thông tin học tập của SV)
         Enrollment enrollment = enrollmentRepository.findById(enrollmentId)
                 .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND, "Không tìm thấy thông tin đăng ký của sinh viên"));
+
+        // 2. RẤT QUAN TRỌNG: Kiểm tra xem sinh viên này có thực sự thuộc lớp (sectionId) này không
+        if (!enrollment.getCourseSection().getId().equals(sectionId)) {
+            throw new AppException(ErrorCode.INVALID_INPUT,
+                    "Sinh viên (ID: " + enrollmentId + ") không thuộc lớp học phần: " + sectionId);
+        }
 
         // 2. Tìm đúng cấu hình cột điểm (SectionAssessment) của lớp này dựa trên saCode
         SectionAssessment sa = sectionAssessmentRepository

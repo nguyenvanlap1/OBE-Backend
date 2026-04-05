@@ -1,4 +1,12 @@
 spring:
+  devtools:
+    restart:
+      enabled: true
+      # Quét thêm cả thư mục resources (chứa file sql init của bạn)
+      additional-paths: src/main/resources
+      # Nếu lưu file mà 2 giây sau chưa restart thì báo lỗi
+      poll-interval: 2s
+      quiet-period: 1s
   # PHẢI CÓ NHÁNH JPA Ở ĐÂY
   sql:
     init:

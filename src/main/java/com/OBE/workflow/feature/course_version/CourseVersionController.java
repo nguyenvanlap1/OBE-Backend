@@ -8,6 +8,7 @@ import com.OBE.workflow.feature.course_version.request.CourseVersionRequestCreat
 import com.OBE.workflow.feature.course_version.request.CourseVersionRequestUpdateDetail;
 import com.OBE.workflow.feature.course_version.response.CourseVersionResponse;
 import com.OBE.workflow.feature.course_version.response.CourseVersionResponseDetail;
+import com.OBE.workflow.feature.sup_department.SubDepartmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
@@ -15,6 +16,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -23,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 public class CourseVersionController {
 
     private final CourseVersionService courseVersionService;
+    private final SubDepartmentService subDepartmentService;
 
     /**
      * Tìm kiếm và phân trang danh sách phiên bản học phần
@@ -66,8 +70,9 @@ public class CourseVersionController {
      * Tạo mới học phần và phiên bản đầu tiên (V1)
      */
     @PostMapping("/first")
+    @PreAuthorize("@ps.hasPermission('COURSE_VERSION_CREATE', #request.subDepartmentId, @subDepartmentService.getDepartmentIdBySubDepartmentId(#request.subDepartmentId))")
     public ResponseEntity<ApiResponse<CourseVersionResponseDetail>> createFirstVersion(
-            @Valid @RequestBody CourseVersionRequestCreateFirstDetail request) {
+            @P("request") @Valid @RequestBody CourseVersionRequestCreateFirstDetail request) {
 
         CourseVersionResponseDetail detail = courseVersionService.createFirstCourseVersionDetail(request);
 
@@ -84,8 +89,11 @@ public class CourseVersionController {
      * Tạo phiên bản kế tiếp cho học phần đã tồn tại (V+1)
      */
     @PostMapping("/next")
+    @PreAuthorize("@ps.hasPermission('COURSE_VERSION_CREATE', " +
+            "@courseVersionService.getSubDepartmentIdByCourse(#request.courseId), " +
+            "@courseVersionService.getDepartmentIdByCourse(#request.courseId))")
     public ResponseEntity<ApiResponse<CourseVersionResponseDetail>> createNextVersion(
-            @Valid @RequestBody CourseVersionRequestCreateDetail request) {
+            @P("request") @Valid @RequestBody CourseVersionRequestCreateDetail request) {
 
         CourseVersionResponseDetail detail = courseVersionService.createNextCourseVersionDetail(request);
 
@@ -102,8 +110,11 @@ public class CourseVersionController {
      * Cập nhật thông tin chi tiết của một phiên bản (bao gồm CO, CLO, Assessment và Mapping)
      */
     @PutMapping
+    @PreAuthorize("@ps.hasPermission('COURSE_VERSION_WRITE', " +
+            "@courseVersionService.getSubDepartmentIdByCourse(#request.courseId), " +
+            "@courseVersionService.getDepartmentIdByCourse(#request.courseId))")
     public ResponseEntity<ApiResponse<CourseVersionResponseDetail>> updateVersionDetail(
-            @Valid @RequestBody CourseVersionRequestUpdateDetail request) {
+            @P("request") @Valid @RequestBody CourseVersionRequestUpdateDetail request) {
 
         CourseVersionResponseDetail detail = courseVersionService.updateCourseVersionDetail(request);
 
@@ -120,8 +131,11 @@ public class CourseVersionController {
      * Xóa một phiên bản học phần
      */
     @DeleteMapping("/{courseId}/{versionNumber}")
+    @PreAuthorize("@ps.hasPermission('COURSE_VERSION_DELETE', " +
+            "@courseVersionService.getSubDepartmentIdByCourse(#courseId), " +
+            "@courseVersionService.getDepartmentIdByCourse(#courseId))")
     public ResponseEntity<ApiResponse<Void>> deleteVersion(
-            @PathVariable("courseId") String courseId,
+            @P("courseId") @PathVariable("courseId") String courseId,
             @PathVariable("versionNumber") Integer versionNumber) {
 
         courseVersionService.deleteCourseVersion(courseId, versionNumber);

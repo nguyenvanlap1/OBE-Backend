@@ -2,6 +2,7 @@ package com.OBE.workflow.feature.semester;
 
 import com.OBE.workflow.conmon.exception.AppException;
 import com.OBE.workflow.conmon.exception.ErrorCode;
+import com.OBE.workflow.feature.course_section.CourseSectionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class SemesterService {
 
     private final SemesterRepository semesterRepository;
+    private final CourseSectionRepository courseSectionRepository;
 
     @Transactional
     public Semester createSemester(SemesterRequest request) {
@@ -58,9 +60,18 @@ public class SemesterService {
 
     @Transactional
     public void deleteSemester(Long id) {
+        // 1. Kiểm tra học kỳ có tồn tại trong DB không
         if (!semesterRepository.existsById(id)) {
-            throw new AppException(ErrorCode.ENTITY_NOT_FOUND, "Không tìm thấy học kỳ để xóa");
+            throw new AppException(ErrorCode.ENTITY_NOT_FOUND, "Không tìm thấy học kỳ để xóa.");
         }
+
+        // 2. Kiểm tra ràng buộc: Nếu có lớp học phần thì CHẶN xóa
+        if (courseSectionRepository.existsBySemesterId(id)) {
+            throw new AppException(ErrorCode.DEPENDENT_RESOURCES_EXIST,
+                    "Không thể xóa học kỳ vì đã có các lớp học phần được tạo trong học kỳ này.");
+        }
+
+        // 3. An toàn thì mới tiến hành xóa
         semesterRepository.deleteById(id);
     }
 

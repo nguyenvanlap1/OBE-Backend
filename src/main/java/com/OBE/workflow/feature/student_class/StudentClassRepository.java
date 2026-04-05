@@ -17,4 +17,6 @@ public interface StudentClassRepository extends JpaRepository<StudentClass, Stri
             "JOIN FETCH ep.subDepartment sd " +
             "JOIN FETCH sd.department")
     List<StudentClass> findAllWithDepth();
+
+    boolean existsBySchoolYearId(String id);
 }

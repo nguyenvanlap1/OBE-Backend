@@ -3,6 +3,7 @@ package com.OBE.workflow.conmon.exception;
 import com.OBE.workflow.conmon.dto.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -37,6 +38,33 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Object>> handAppException(AppException e) {
         ErrorCode errorCode = e.getErrorCode();
         return buildResponseEntity(HttpStatus.valueOf(errorCode.getCode()), e.getMessage());
+    }
+
+    // Bắt lỗi khi Jackson parse JSON sai định dạng (ví dụ ngày 31/04 hoặc sai format yyyy-MM-dd)
+    @ExceptionHandler(value = HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Object>> handlingHttpMessageNotReadableException(HttpMessageNotReadableException exception) {
+        exception.printStackTrace();
+        String message = "Dữ liệu đầu vào không hợp lệ hoặc sai định dạng.";
+
+        Throwable cause = exception.getCause();
+        // Duyệt tìm nguyên nhân gốc rễ (Root Cause)
+        while (cause != null) {
+            // Kiểm tra nếu lỗi xuất phát từ việc parse ngày tháng không tồn tại
+            if (cause instanceof java.time.format.DateTimeParseException) {
+                message = "Ngày tháng không hợp lệ hoặc không tồn tại (Ví dụ: tháng 4 không có ngày 31).";
+                break;
+            }
+            // Kiểm tra nếu lỗi do sai kiểu dữ liệu (String sang Number, String sang Date...)
+            if (cause instanceof com.fasterxml.jackson.databind.exc.InvalidFormatException) {
+                message = "Định dạng dữ liệu không đúng (Ví dụ: sai định dạng ngày yyyy-MM-dd).";
+                break;
+            }
+            cause = cause.getCause();
+        }
+        System.out.println(message);
+
+        // Sử dụng helper method buildResponseEntity của bạn để đồng bộ format
+        return buildResponseEntity(HttpStatus.BAD_REQUEST, message);
     }
 
     // 3. Bắt tất cả các lỗi chưa được định nghĩa ở trên (Lỗi 500)

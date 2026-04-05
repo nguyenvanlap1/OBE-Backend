@@ -30,7 +30,8 @@ public enum ErrorCode {
     UNCATEGORIZED_EXCEPTION(9999, "Lỗi chưa phân loại"),
     INVALID_INPUT(543, "Đầu vào không hợp lệ"),
     INVALID_KEY(5453, "Trùng mã"),
-    INVALID_PASSWORD(54354,"Mật khẩu cũ không chính xác" );
+    INVALID_PASSWORD(54354,"Mật khẩu cũ không chính xác" ),
+    DEPENDENT_RESOURCES_EXIST(4342, "Ràng buộc thực thể không thể xóa");
     private final int code;
     private final String message;
 }

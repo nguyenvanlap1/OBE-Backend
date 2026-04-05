@@ -118,10 +118,16 @@ public class StudentService {
                 .orElseThrow(() -> new AppException(ErrorCode.ENTITY_NOT_FOUND,
                         "Không tìm thấy sinh viên với mã: " + id));
 
-        // Xóa các mối quan hệ với lớp học trong bảng trung gian
-        student.getStudentClasses().clear();
+        // Kiểm tra: Nếu đã có điểm hoặc có đăng ký học phần thì KHÔNG cho xóa để bảo vệ dữ liệu
+        if (!student.getEnrollments().isEmpty()) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION,
+                    "Không thể xóa sinh viên [" + id + "] vì đã có dữ liệu đăng ký học phần/điểm số.");
+        }
+        // Phải gỡ từ phía Owner (StudentClass)
+        new HashSet<>(student.getStudentClasses()).forEach(clazz -> {
+            clazz.removeStudent(student);
+        });
 
-        // Thực hiện xóa thực thể sinh viên
         studentRepository.delete(student);
     }
 }
